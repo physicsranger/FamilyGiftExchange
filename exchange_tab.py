@@ -6,4 +6,8 @@ from tkinter import ttk
 #explicitly asked to show it
 class ExchangeTab(ttk.Frame):
 	def __init__(self,parent,app,master,*args):
-		ttk.Frame.__init__()
+		ttk.Frame__init__(self)
+		self.parent=parent
+		self.app=app
+		self.master=master
+		self.parent.add(self,*args,**kwargs)

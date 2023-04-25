@@ -17,11 +17,11 @@ class MainApp:
 		self.master=master
 		self.notebook=ttk.Notebook(self.master)
 		
-		self.make_elements()
+		self.make_tabs()
 		
 		self.grid()
 	
-	def make_elements(self):
+	def make_tabs(self):
 		self.family_tab=FamilyTab(self.notebook,self,self.master,text='')
 		
 		self.exchange_tab=ExchangeTab(self.notebook,self,self.master,text='')
