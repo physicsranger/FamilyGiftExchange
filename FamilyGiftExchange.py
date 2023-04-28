@@ -22,9 +22,9 @@ class MainApp:
 		self.grid()
 	
 	def make_tabs(self):
-		self.family_tab=FamilyTab(self.notebook,self,self.master,text='')
+		self.family_tab=FamilyTab(self.notebook,self,self.master,text='Your Family')
 		
-		self.exchange_tab=ExchangeTab(self.notebook,self,self.master,text='')
+		self.exchange_tab=ExchangeTab(self.notebook,self,self.master,text='Gift Exchange')
 
 	def grid(self):
 		self.family_tab.grid_all()
