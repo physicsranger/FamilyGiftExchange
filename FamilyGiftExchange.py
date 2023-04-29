@@ -3,8 +3,8 @@
 import tkinter as tki
 from tkinter import ttk
 import os
-from family_tab import FamilyTab
-from exchange_tab import ExchangeTab
+from GiftExchangeElements.family_tab import FamilyTab
+from GiftExchangeElements.exchange_tab import ExchangeTab
 
 '''First we have to make the 'family' table, that will give each person a unique
 ID, and then that ID can more easily (safely?) be used for the column name in the 
@@ -22,9 +22,10 @@ class MainApp:
 		self.grid()
 	
 	def make_tabs(self):
-		self.family_tab=FamilyTab(self.notebook,self,self.master,text='')
+		self.family_tab=FamilyTab(self.notebook,self,self.master,
+		text='Manage Your Family')
 		
-		self.exchange_tab=ExchangeTab(self.notebook,self,self.master,text='')
+		self.exchange_tab=ExchangeTab(self.notebook,self,self.master,text='Gift Exchange')
 
 	def grid(self):
 		self.family_tab.grid_all()
