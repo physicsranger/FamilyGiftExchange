@@ -8,7 +8,7 @@ from gift_exchange_utilities import create_database
 class FamilyTab(ttk.Frame):
 	def __init__(self,parent,app,master,*args,**kwargs):
 		#do the Frame initialization
-		ttk.Frame__init__(self)
+		ttk.Frame.__init__(self)
 		
 		#assign some attributes so we can access the notebook, app, and Tk instance
 		self.parent=parent
@@ -22,11 +22,11 @@ class FamilyTab(ttk.Frame):
 	
 	def make_frames(self):
 		#make a frame for the create database button and such
-		self.create_frame=ttk.Frame(self,bordersize=1,relief='sunken')
+		self.create_frame=ttk.Frame(self,borderwidth=1,relief='sunken')
 		self.fill_create_frame(self.create_frame)
 		
 		#make a frame for entering family info
-		self.family_frame=ttk.Frame(self,bordersize=1,relief='sunken')
+		self.family_frame=ttk.Frame(self,borderwidth=1,relief='sunken')
 		self.fill_family_frame(self.family_frame)
 	
 	def fill_create_frame(self,parent):
@@ -34,12 +34,6 @@ class FamilyTab(ttk.Frame):
 		#all the tables we'll want to fill in later
 		self.create_button=ttk.Button(parent,text='Create Family',
 		command=self.create_family)
-		
-		#check button to flag if we want to overwrite an existing
-		#database of the same name
-		self.overwrite=tki.BooleanVar(value=False)
-		self.overwrite_check=ttk.Checkbutton(parent,variable=self.overwrite,
-		onvalue=True,offvalue=False)
 		
 		#button to get the directory to save the database in and to
 		#know where to look for it...this may be hardcoded later,
@@ -52,7 +46,14 @@ class FamilyTab(ttk.Frame):
 		self.database_file_name=tki.StringVar(value='FamilyGiftExchange.db')
 		self.database_file_name_label=ttk.Label(parent,text='Database Name')
 		self.database_file_name_entry=ttk.Entry(parent,
-		textvariable=self.database_file_name,width=12)
+		textvariable=self.database_file_name,width=20)
+		
+		#check button to flag if we want to overwrite an existing
+		#database of the same name
+		self.overwrite=tki.BooleanVar(value=False)
+		self.overwrite_label=ttk.Label(parent,text='Overwrite')
+		self.overwrite_check=ttk.Checkbutton(parent,variable=self.overwrite,
+		onvalue=True,offvalue=False)
 		
 	def fill_family_frame(self,parent):
 		#variable, label, and combobox entry for a family member
@@ -66,13 +67,15 @@ class FamilyTab(ttk.Frame):
 		self.significant_other_label=ttk.Label(parent,text='Significant Other')
 		self.significant_other_box=ttk.Combobox(parent,
 		textvariable=self.significant_other)
-		#figure out combobox bind stuff later
+		
+		#populate the values for the Combobox, if the database already exists
+		self.list_family()
 		
 		#now create variables and widgets for the family member
 		#email and address info
 		self.email=tki.StringVar()
 		self.email_label=ttk.Label(parent,text='Email address')
-		self.email_entry=ttk.Entry(parent,textvariable=self.email,width=20)
+		self.email_entry=ttk.Entry(parent,textvariable=self.email,width=30)
 		
 		self.address_line_1=tki.StringVar()
 		self.address_line_2=tki.StringVar()
@@ -89,10 +92,10 @@ class FamilyTab(ttk.Frame):
 		self.country_label=ttk.Label(parent,text='Country')
 		
 		self.address_line_1_entry=ttk.Entry(parent,
-		textvariable=self.address_line_1,width=20)
+		textvariable=self.address_line_1,width=40)
 		
 		self.address_line_2_entry=ttk.Entry(parent,
-		textvraiable=self.address_line_2,width=20)
+		textvariable=self.address_line_2,width=40)
 		
 		self.city_entry=ttk.Entry(parent,textvariable=self.city,width=12)
 		self.state_entry=ttk.Entry(parent,textvariable=self.state,width=12)
@@ -100,11 +103,13 @@ class FamilyTab(ttk.Frame):
 		self.country_entry=ttk.Entry(parent,textvariable=self.country,width=12)
 		
 		#add a couple of buttons
-		self.add_or_update_member_button=ttk.Button(parent,text='Add/Update',
+		self.add_or_update_member_button=ttk.Button(parent,text='Add/Update Member Info',
 		command=self.add_or_update_member)
 		
-		self.remove_member_button=ttk.Button(parent,text='Remove',
+		self.remove_member_button=ttk.Button(parent,text='Remove Member',
 		command=self.remove_member)
+		
+		self.quit_button=ttk.Button(parent,text='Quit',command=self.master.destroy)
 	
 	def grid_all(self):
 		self.grid_create_frame()
@@ -119,9 +124,12 @@ class FamilyTab(ttk.Frame):
 		self.create_button.grid(column=0,row=0,sticky='E')
 		self.database_directory_button.grid(column=1,row=0)
 		self.database_file_name_label.grid(column=2,row=0)
-		self.database_file_name_entry.grid(column=3,row=0,sticky='W')
+		self.database_file_name_entry.grid(column=3,row=0,columnspan=2,sticky='W')
+		
+		self.overwrite_check.grid(column=5,row=0,sticky='E')
+		self.overwrite_label.grid(column=6,row=0)
 	
-	def pack_family_frame(self):
+	def grid_family_frame(self):
 		#first,place the frame itself, below create frame, set to fill horizontally
 		self.family_frame.grid(column=0,row=1,sticky='NESW')		
 		#now place widgets within the frame
@@ -129,15 +137,15 @@ class FamilyTab(ttk.Frame):
 		self.family_member_box.grid(column=1,row=0,columnspan=2,sticky='W')
 		
 		self.significant_other_label.grid(column=3,row=0)
-		self.significant_other_box.grid(column=3,row=0,columnspan=2,sticky='W')
+		self.significant_other_box.grid(column=4,row=0,columnspan=2,sticky='W')
 		
 		self.email_label.grid(column=0,row=1)
-		self.email_entry.grid(column=1,row=1,columnspan=2,sticky='W')
+		self.email_entry.grid(column=1,row=1,columnspan=3,sticky='W')
 		
-		self.address_line_1_label.grid(column=0,row=2,columnspan=2)
-		self.address_line_1_entry.grid(column=2,row=2,columnspan=3,sticky='W')
-		self.address_line_2_label.grid(column=0,row=3,columnspan=2)
-		self.address_line_2_entry.grid(column=2,row=3,columnspan=3,sticky='W')
+		self.address_line_1_label.grid(column=0,row=2)
+		self.address_line_1_entry.grid(column=1,row=2,columnspan=4,sticky='W')
+		self.address_line_2_label.grid(column=0,row=3)
+		self.address_line_2_entry.grid(column=1,row=3,columnspan=4,sticky='W')
 		
 		self.city_label.grid(column=0,row=4)
 		self.city_entry.grid(column=1,row=4,sticky='W')
@@ -149,21 +157,26 @@ class FamilyTab(ttk.Frame):
 		self.country_label.grid(column=0,row=5)
 		self.country_entry.grid(column=1,row=5,sticky='W')
 		
-		self.add_or_update_member_button.grid(column=0,row=6,columnspan=2)
-		self.remove_member_buttom.grid(column=3,row=6,columnspan=2)
+		self.add_or_update_member_button.grid(column=0,row=6,columnspan=2,sticky='W')
+		self.remove_member_button.grid(column=2,row=6,columnspan=2,sticky='W')
+		self.quit_button.grid(column=4,row=6)
 	
 	def create_family(self):
 		#create the empty database file
-		create_database(database_file=os.path.join(self.database_directory.get(),
-		self.database_file_name.get()),overwrite=self.overwrite.get())
+		##create_database(database_file=os.path.join(self.database_directory.get(),
+		##self.database_file_name.get()),overwrite=self.overwrite.get())
+		
 		#need some way to let the user know that the creation was successful
 		#perhaps use the terminal window widget from my SUPERB GUI
 		#will need that since create_database has print statements
+		
+		return
 	
-	def update_save_directory(self):
+	def update_database_directory(self):
 		#use the filedialog stuff to select a new save directory
 		#see if there is someway to make a default directory
 		#within the repo such that the database itself is excluded
+		return
 	
 	def add_or_update_member(self):
 		#code to insert a new member or alter their info in a particular table
@@ -177,13 +190,17 @@ class FamilyTab(ttk.Frame):
 		#after that, update the family member list
 		self.list_family()
 	
-	def list_family(self):
+	def list_family(self,*args):
 		#get the list of family member names from the data base and populate
 		#the combo boxes
-		with sqlite3.connect(os.path.join(self.database_directory.get(),
-		self.database_file_name.get())) as con:
-			family=con.cursor().execute("SELECT name FROM family").fetchall()
-		self.family_member_box['values']=family
-		self.significant_other_box['values']=family
+		dbfile=os.path.join(self.database_directory.get(),
+		self.database_file_name.get())
+		
+		if os.path.exists(dbfile):
+			with sqlite3.connect(dbfile) as con:
+				family=con.cursor().execute("SELECT name FROM family").fetchall()
+		
+			self.family_member_box['values']=family
+			self.significant_other_box['values']=family
 		
 		

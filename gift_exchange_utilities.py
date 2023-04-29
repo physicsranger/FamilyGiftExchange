@@ -14,12 +14,12 @@ def create_database(database_file,overwrite=False):
 	if os.path.exists(database_file):
 		if overwrite:
 			print(f'NOTE: {database_file} exists but overwrite set to True.')
-			if os.path.isdir(os.path.join(os.sep,'tmp'):
+			if os.path.isdir(os.path.join(os.sep,'tmp')):
 				backup_file=os.path.join(os.sep,'tmp',database_file.split(os.sep)[-1])
 			else:
 				backup_file=os.path.join(os.sep,
 				*database_file.split(os.sep)[1:-1],
-				'bkup_'_database_file.split(os.sep)[-1])
+				'bkup_'+database_file.split(os.sep)[-1])
 			#need some logic to catch windows systems
 			copyfile(database_file,backup_file)
 			os.remove(database_file)
