@@ -35,18 +35,11 @@ class FamilyTab(ttk.Frame):
 		self.create_button=ttk.Button(parent,text='Create Family',
 		command=self.create_family)
 		
-		#button to get the directory to save the database in and to
-		#know where to look for it...this may be hardcoded later,
-		#start with current working directory
-		self.database_directory=tki.StringVar(value=os.getcwd())
-		self.database_directory_button=ttk.Button(parent,
-		text=f'Save Location',command=self.update_database_directory)
-		
-		#set a default name, allow for it to be changed
-		self.database_file_name=tki.StringVar(value='FamilyGiftExchange.db')
-		self.database_file_name_label=ttk.Label(parent,text='Database Name')
-		self.database_file_name_entry=ttk.Entry(parent,
-		textvariable=self.database_file_name,width=20)
+		self.database_file=tki.StringVar()
+		self.family=tki.StringVar()
+		self.family_label=ttk.Label(parent,text='Choose Family')
+		self.family_box=ttk.Combobox(parent,textvariable=self.family)
+		self.family_box.bind('<<ComboboxSelected>>',self.get_families)
 		
 		#check button to flag if we want to overwrite an existing
 		#database of the same name
@@ -122,12 +115,12 @@ class FamilyTab(ttk.Frame):
 		
 		#now, place the widgets within the frame
 		self.create_button.grid(column=0,row=0,sticky='E')
-		self.database_directory_button.grid(column=1,row=0)
-		self.database_file_name_label.grid(column=2,row=0)
-		self.database_file_name_entry.grid(column=3,row=0,columnspan=2,sticky='W')
 		
-		self.overwrite_check.grid(column=5,row=0,sticky='E')
-		self.overwrite_label.grid(column=6,row=0)
+		self.family_label.grid(column=1,row=0)
+		self.family_box.grid(column=2,row=0,sticky='W')
+		
+		self.overwrite_check.grid(column=3,row=0,sticky='E')
+		self.overwrite_label.grid(column=4,row=0)
 	
 	def grid_family_frame(self):
 		#first,place the frame itself, below create frame, set to fill horizontally

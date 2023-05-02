@@ -2,7 +2,7 @@
 ###will the shebang above actually work across operating systems?
 import tkinter as tki
 from tkinter import ttk
-import os
+import os,sys
 from GiftExchangeElements.family_tab import FamilyTab
 from GiftExchangeElements.exchange_tab import ExchangeTab
 
@@ -15,6 +15,23 @@ the actual names and email addresses'''
 class MainApp:
 	def __init__(self,master):
 		self.master=master
+		
+		#I'm going to need to play around with this a little
+		#to get things right
+		if getattr(sys,'frozen',False):
+			self.app_directory=os.path.dirname(sys.executable)
+			while self.app_directory.split(os.sep)[-1]!='FamilyGiftExchange' and self.app_directory!=os.sep:
+				self.app_directory=os.path.dirname(self.app_directory)
+		if self.app_directory==os.sep:
+			#couldn't figure out the install dir, use current dir
+			self.app_directory=os.getcwd()
+			
+			
+		elif __file__:
+			self.app_directory=os.path.dirname(__file__)
+		else:
+			self.app_directory=os.getcwd()
+		
 		self.notebook=ttk.Notebook(self.master)
 		
 		self.make_tabs()
