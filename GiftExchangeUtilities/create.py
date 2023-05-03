@@ -31,7 +31,7 @@ def create_database(database_file,overwrite=False):
 		cursor=connection.cursor()
 		
 		#create the necessary tables
-		print('Creating tables...')
+		print('Creating tables',end='...')
 		
 		#first, the family table
 		cursor.execute('''CREATE TABLE family
@@ -67,6 +67,6 @@ def create_database(database_file,overwrite=False):
 		constraint fk_id FOREIGN KEY (id) REFERENCES id (family))''')
 		
 		connection.commit()
-		print('...finished.')
+		print('finished.')
 	
 	return

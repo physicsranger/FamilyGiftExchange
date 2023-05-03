@@ -4,9 +4,10 @@ import sqlite3
 #functions for family management purposes
 ############################################################
 
-#function to add/update family table
+#function to add/update family member info
 #the input should be a nested dictionary with info for the member
 #top dictionary should have keys for each table
+#(family and significant_other)
 #then each dictionary there should have the relevant info
 def add_or_update_family_member(database_file,member):
 	try:
@@ -120,12 +121,14 @@ def remove_family_member(database_file,name):
 			FROM addresses
 			WHERE id=?''',(member['address_id'],))
 		
-		#now remove the member from the family and significant_other tables
-		cur.execute('''DELETE *
-		FROM family
-		WHERE id=?''',(member['id'],))
+		#now remove the member from the significant_other and family tables
+		#(need to think about it, but I believe that is the correct order)
 		cur.execute('''DELETE *
 		FROM significant_other
+		WHERE id=?''',(member['id'],))
+		
+		cur.execute('''DELETE *
+		FROM family
 		WHERE id=?''',(member['id'],))
 		
 		#and update the info for whoever might have had this
@@ -333,3 +336,49 @@ def address_changed(database_file,address_id,name,cur=None):
 		return False
 	else:
 		return address_id==current_address_id[0]
+
+def query_member(database_file,name,cur=None):
+	if not isinstance(cur,sqlite3.Cursor):
+		con=sqlite3.connect(database_file)
+		con.row_factory=sqlite3.Row
+		cur=con.cursor()
+	else:
+		con=None
+	
+	if member_in_database(None,name,cur):
+		row=cur.execute('''SELECT s.so_id, f.email, a.address
+		FROM family AS f
+		JOIN significant_other as s
+		ON f.id=s.id
+		JOIN addresses as a
+		ON f.address_id=a.id
+		WHERE f.name=(?)''',(name,)).fetchone()
+		
+		#if a cursor was passed in, we don't know what row_factory was
+		#used, check if it has a dict-like structure or not
+		if not hasattr(row,'keys'):
+			if len(row)==1:
+				row=row[0]
+			row={'so_id':row[0],
+			'email':row[1],
+			'address':row[2]}
+		
+		if row['so_id'] is not None:
+			row['significant_other']=cur.execute('''SELECT name
+				FROM family WHERE id=?''',(row['so_id'],)).fetchone()['name']
+		else:
+			row['significant_other']=''
+		
+		if con is not None:
+			con.close()
+		
+		return row
+				
+	else:
+		#just return default values
+		return {'significant_other':'','email':'','address':'\n\n\n\n\n'}
+		
+		
+		
+		
+		

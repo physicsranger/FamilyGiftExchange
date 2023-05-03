@@ -36,7 +36,7 @@ class MainApp:
 		
 		self.make_tabs()
 		
-		self.grid()
+		self.grid_all()
 	
 	def make_tabs(self):
 		self.family_tab=FamilyTab(self.notebook,self,self.master,
@@ -44,7 +44,7 @@ class MainApp:
 		
 		self.exchange_tab=ExchangeTab(self.notebook,self,self.master,text='Gift Exchange')
 
-	def grid(self):
+	def grid_all(self):
 		self.family_tab.grid_all()
 		
 		self.exhange_tab.grid_all()
