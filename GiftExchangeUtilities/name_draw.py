@@ -31,7 +31,7 @@ overwrite=False,new_year=None):
 				print(f'Exchange info exists for {new_year}, overwrite flag set to True, will generate new gift exchange assignments.')
 			else:
 				print(f'Exchange info exists for {new_year}, overwrite flag set to false, will not do anything.')
-				return
+				return False
 		#commit the changes
 		con.commit()
 		
@@ -53,7 +53,7 @@ overwrite=False,new_year=None):
 			print(f'Whoops! We ended up with {len(names)} names.')
 			print('Make sure you have populated your family table and that you did not accidentally skip too many family members.')
 			print(f'Not generating gift exchange assignments for {new_year}')
-			return
+			return None
 		
 		#get the columns from the exchange table to be used in building
 		#lists of members to exclude for each member
@@ -130,7 +130,7 @@ overwrite=False,new_year=None):
 						member_info[name]['excludes']=new_excludes
 		if BAIL:
 			print('Will not generate new gift exchange assignments, see output messages.')
-			return
+			return False
 		
 		#now we need to actually do the random draws
 		#taking into account the exclusion info
@@ -140,7 +140,7 @@ overwrite=False,new_year=None):
 		if exchange_draws is None:
 			print('Was unable to produce gift exchange draws satisfying all exclusion requirements.')
 			print('Please check output messages, database tables, and choice of number of previous giftees to exclude and try again.')
-			return
+			return False
 		
 		#now we need to add the giftee assignments to the exchange table in the
 		#column for the new year
@@ -156,7 +156,7 @@ overwrite=False,new_year=None):
 		con.commit()
 	
 	print(f'Successfully generated gift exchange assignments for {new_year}')
-	return
+	return True
 
 def output_giftee_assignments(database_file,year=None):
 	#if no year was provided, assume it is the current year
@@ -179,11 +179,12 @@ def output_giftee_assignments(database_file,year=None):
 			return
 		
 		for row in rows:
-			produce_assignment_files(database_file,
-			row['id'],row[f'Year_{year}'],year,cur)
+			if row[f'Year_{year}'] is not None:
+				produce_assignment_files(database_file,row['id'],
+				    row[f'Year_{year}'],year,cur)
 		
 		print(f'Gift exchange assignment files successfully generated for {year}')
-		print(f'Files can be found in {os.path.join(os.path.abspath(database_file),"Year_"+str(year))}.')
+		print(f'Files can be found in {os.path.join(os.path.dirname(database_file),"Year_"+str(year))}.')
 		
 	return
 					
@@ -251,7 +252,7 @@ def produce_assignment_file(database_file,gifter_id,giftee_id,year,cur=None):
 		con=None
 	
 	#get the directory
-	gift_exchange_dir=os.path.join(os.path.abspath(database_file),str(year))
+	gift_exchange_dir=os.path.join(os.path.dirname(database_file),str(year))
 	if not os.path.exists(gift_exchange):
 		os.mkdir(gift_exchange)
 	

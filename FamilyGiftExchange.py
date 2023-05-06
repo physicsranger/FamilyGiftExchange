@@ -20,8 +20,11 @@ class MainApp:
 		#to get things right
 		if getattr(sys,'frozen',False):
 			self.app_directory=os.path.dirname(sys.executable)
-			while self.app_directory.split(os.sep)[-1]!='FamilyGiftExchange' and self.app_directory!=os.sep:
+			while self.app_directory.split(os.sep)[-1]!='FamilyGiftExchange'\
+			 and self.app_directory!=os.sep:
+			 
 				self.app_directory=os.path.dirname(self.app_directory)
+				
 		if self.app_directory==os.sep:
 			#couldn't figure out the install dir, use current dir
 			self.app_directory=os.getcwd()
@@ -40,9 +43,10 @@ class MainApp:
 	
 	def make_tabs(self):
 		self.family_tab=FamilyTab(self.notebook,self,self.master,
-		text='Manage Your Family')
+		    text='Manage Your Family')
 		
-		self.exchange_tab=ExchangeTab(self.notebook,self,self.master,text='Gift Exchange')
+		self.exchange_tab=ExchangeTab(self.notebook,self,self.master,
+		    text='Gift Exchange')
 
 	def grid_all(self):
 		self.family_tab.grid_all()

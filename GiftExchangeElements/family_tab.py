@@ -41,20 +41,20 @@ class FamilyTab(ttk.Frame):
 		#first off, button to create an empty database with
 		#all the tables we'll want to fill in later
 		self.create_button=ttk.Button(parent,text='Create Family',
-		command=self.create_family)
+		    command=self.create_family)
 		
 		self.family=tki.StringVar()
 		self.family_label=ttk.Label(parent,text='Choose Family')
 		self.family_box=ttk.Combobox(parent,textvariable=self.family)
-		self.family_box.bind('<<ComboboxSelected>>',self.get_families)
-		self.family_box['value']=self.get_available_families()
+		self.family_box.bind('<<ComboboxSelected>>',self.get_available_families)
+		self.family_box['values']=self.get_available_families()
 		
 		#check button to flag if we want to overwrite an existing
 		#database of the same name
 		self.overwrite=tki.BooleanVar(value=False)
 		self.overwrite_label=ttk.Label(parent,text='Overwrite')
 		self.overwrite_check=ttk.Checkbutton(parent,variable=self.overwrite,
-		onvalue=True,offvalue=False)
+		    onvalue=True,offvalue=False)
 		
 	def fill_family_frame(self,parent):
 		#variable, label, and combobox entry for a family member
@@ -67,7 +67,7 @@ class FamilyTab(ttk.Frame):
 		self.significant_other=tki.StringVar()
 		self.significant_other_label=ttk.Label(parent,text='Significant Other')
 		self.significant_other_box=ttk.Combobox(parent,
-		textvariable=self.significant_other)
+		    textvariable=self.significant_other)
 		
 		#now create variables and widgets for the family member
 		#email and address info
@@ -90,10 +90,10 @@ class FamilyTab(ttk.Frame):
 		self.country_label=ttk.Label(parent,text='Country')
 		
 		self.address_line_1_entry=ttk.Entry(parent,
-		textvariable=self.address_line_1,width=40)
+		    textvariable=self.address_line_1,width=40)
 		
 		self.address_line_2_entry=ttk.Entry(parent,
-		textvariable=self.address_line_2,width=40)
+		    textvariable=self.address_line_2,width=40)
 		
 		self.city_entry=ttk.Entry(parent,textvariable=self.city,width=12)
 		self.state_entry=ttk.Entry(parent,textvariable=self.state,width=12)
@@ -102,10 +102,10 @@ class FamilyTab(ttk.Frame):
 		
 		#add a couple of buttons
 		self.add_or_update_member_button=ttk.Button(parent,text='Add/Update Member Info',
-		command=self.add_or_update_member,state='disabled')
+		    command=self.add_or_update_member,state='disabled')
 		
 		self.remove_member_button=ttk.Button(parent,text='Remove Member',
-		command=self.remove_member,state='disabled')
+		    command=self.remove_member,state='disabled')
 		
 		self.quit_button=ttk.Button(parent,text='Quit',command=self.master.destroy)
 	
@@ -119,7 +119,7 @@ class FamilyTab(ttk.Frame):
 		self.create_frame.grid(column=0,row=0,sticky='NESW')
 		
 		#now, place the widgets within the frame
-		self.create_button.grid(column=0,row=0,sticky='E')
+		self.create_button.grid(column=0,row=0,sticky='W')
 		
 		self.family_label.grid(column=1,row=0)
 		self.family_box.grid(column=2,row=0,sticky='W')
@@ -130,6 +130,7 @@ class FamilyTab(ttk.Frame):
 	def grid_family_frame(self):
 		#first,place the frame itself, below create frame, set to fill horizontally
 		self.family_frame.grid(column=0,row=1,sticky='NESW')		
+		
 		#now place widgets within the frame
 		self.family_member_label.grid(column=0,row=0)
 		self.family_member_box.grid(column=1,row=0,columnspan=2,sticky='W')
@@ -241,7 +242,8 @@ class FamilyTab(ttk.Frame):
 		families=self.get_available_families()
 		
 		if families:
-			check_buttons=[ttk.Radiobutton(window_frame,text=family,variable=family_choice,value=family) for family in families]
+			check_buttons=[ttk.Radiobutton(window_frame,text=family,
+			    variable=family_choice,value=family) for family in families]
 			for idx,check in enumerate(check_buttons):
 				check.grid(column=0,row=1+idx,columnspan=2,sticky='W')
 		
@@ -272,7 +274,8 @@ class FamilyTab(ttk.Frame):
 			if dir_list:
 				#we want to split on the underscore
 				#but allow for underscores in family names
-				families=[reduce(lambda:s1,s2:s1+'_'+s2,dir_name.split('_')[2:]) for dir_name in dir_list]
+				families=[reduce(lambda:s1,s2:s1+'_'+s2,dir_name.split('_')[2:])\
+				 for dir_name in dir_list]
 		
 		return families
 	
@@ -285,10 +288,10 @@ class FamilyTab(ttk.Frame):
 	#function to make a member dictionary needed for some utility functions
 	def make_member_dictionary(self,*args):
 		member={'family':{'name':self.family_member.get(),
-		'email':self.email.get(),
-		'address':reduce(lambda s1,s2:s1.get()+'\n'+s2.get(),[self.address_line_1,
-		self.address_line_2,self.city,self.state,self.zip_code,self.country])},
-		'significant_other':self.significant_other.get()}
+		  'email':self.email.get(),
+		  'address':reduce(lambda s1,s2:s1.get()+'\n'+s2.get(),[self.address_line_1,
+		    self.address_line_2,self.city,self.state,self.zip_code,self.country])},
+		  'significant_other':self.significant_other.get()}
 		return member
 	
 	#function to remove a family member from the database
@@ -304,7 +307,7 @@ class FamilyTab(ttk.Frame):
 	def list_family(self,*args):
 		if self.family!='':
 			self.database_directory=os.path.join(self.app.app_dir,
-			'GiftExchange_data',f'data_family_{self.family.get()}')
+			    'GiftExchange_data',f'data_family_{self.family.get()}')
 			self.database_file.os.path.join(self.database_directory,'GiftExchange.db')
 		
 			if os.path.exists(self.database_file):
@@ -346,7 +349,9 @@ class FamilyTab(ttk.Frame):
 	def check_family_buttons(self,*args):
 		#if both the family and family_member values are set, the buttons can be
 		#active
-		if (self.family not in [None,'NULL','']) and (self.family_member not in [None,'NULL','']):
+		if (self.family not in [None,'NULL','']) and\
+		 (self.family_member not in [None,'NULL','']):
+		
 			self.add_or_update_member_button['state']='normal'
 			self.remove_member_buton['state']='normal'
 		
