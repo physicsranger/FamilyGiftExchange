@@ -1,6 +1,6 @@
 import tkinter as tki
 from tkinter import ttk
-import time,os
+import time,os,glob
 import pandas as pd
 
 from GiftExchangeUtilities.name_draw import generate_exchange,\
@@ -10,9 +10,9 @@ from GiftExchangeUtilities.name_draw import generate_exchange,\
 #can be viewed with some logic to hide the most-recent exchange unless
 #explicitly asked to show it
 class ExchangeTab(ttk.Frame):
-	def __init__(self,parent,app,master,*args):
+	def __init__(self,parent,app,master,*args,**kwargs):
 		#do the frame initialization
-		ttk.Frame__init__(self)
+		ttk.Frame.__init__(self)
 		
 		#assign some attributes so we can access the notebook, app, and Tk instance
 		self.parent=parent
@@ -30,11 +30,29 @@ class ExchangeTab(ttk.Frame):
 	def make_frames(self):
 		self.exchange_frame=ttk.Frame(self,borderwidth=1,relief='sunken')
 		
-		self.fill_exchange_frame(self.exchange_frame)
+		#self.fill_exchange_frame(self.exchange_frame)
+		self.first_row=ttk.Frame(self.exchange_frame,borderwidth=1,relief='flat')
+		self.fill_first_row(self.first_row)
+		
+		self.second_row=ttk.Frame(self.exchange_frame,borderwidth=1,relief='flat')
+		self.fill_second_row(self.second_row)
+		
+		self.third_row=ttk.Frame(self.exchange_frame,borderwidth=1,relief='flat')
+		self.fill_third_row(self.third_row)
+		
+		self.fourth_row=ttk.Frame(self.exchange_frame,borderwidth=1,relief='flat')
+		self.fill_fourth_row(self.fourth_row)
+		
+		self.fifth_row=ttk.Frame(self.exchange_frame,borderwidth=1,relief='flat')
+		self.fill_fifth_row(self.fifth_row)
 	
-	#function to create the widgets and variables
-	#associated with the exchange frame
-	def fill_exchange_frame(self,parent):
+	def fill_first_row(self,parent):
+		#button to draw names, start out disabled by default, put a trace
+		#on the family variable (can we have multiple traces at once?)
+		self.draw_names_button=ttk.Button(parent,text='Draw Names',
+		    command=self.draw_names,state='disabled',
+		    width=10)
+		    
 		#we expect that this should be called after the family frame
 		#so we can make it point to the same family variable
 		if hasattr(self.app,'family_tab'):
@@ -42,53 +60,96 @@ class ExchangeTab(ttk.Frame):
 		else:
 			self.family=tki.StringVar()
 		
-		self.family_label=ttk.Label(parent,text='Family')
-		self.family_box=ttk.Combobox(parent,textvariable=self.family)
+		self.family_label=ttk.Label(parent,text='Family:',
+		padding=(2,1,1,1))
+		self.family_box=ttk.Combobox(parent,textvariable=self.family,
+		    width=14)
 		self.family_box.bind('<<ComboboxSelected>>',self.get_available_families)
 		self.family_box['values']=self.get_available_families()
 		
-		#button to draw names, start out disabled by default, put a trace
-		#on the family variable (can we have multiple traces at once?)
-		self.draw_names_button=ttk.Button(parent,text='Draw Names',
-		    command=self.draw_names,state='disabled')
-		
 		self.exclude_num_previous=tki.IntVar(value=3)
 		self.exclude_num_previous_label=ttk.Label(parent,
-		    text='Number of previous years to exclude giftees')
+		    text='Number of previous years to exclude giftees',
+		    padding=(2,1,1,1))
 		self.exclude_num_previous_entry=ttk.Entry(parent,
-		    textvariable=self.exclude_num_previous)
-		
+		    textvariable=self.exclude_num_previous,width=2)
+	
+	def fill_second_row(self,parent):
 		self.exchange_year=tki.StringVar(value=time.localtime().tm_year)
-		self.exchange_year_label=ttk.Label(parent,text='Year')
+		self.exchange_year_label=ttk.Label(parent,text='Year:',width=4)
 		self.exchange_year_entry=ttk.Entry(parent,
-		    textvariable=self.exchange_year)
+		    textvariable=self.exchange_year,width=4)
 		
 		self.overwrite_year=tki.BooleanVar(value=False)
 		self.overwrite_year_check=ttk.Checkbutton(parent,
 		    variable=self.overwrite_year,onvalue=True,offvalue=False)
 		self.overwrite_year_label=ttk.Label(parent,
-		    text='Replace existing year.')
+		    text='Replace existing year?')
 		    	
 		self.skip_members=[]
 		self.skip_members_button=ttk.Button(parent,
-		    text='Choose members to skip',command=self.choose_members_to_skip)
-		
+		    text='Choose members to skip',command=self.choose_members_to_skip)	
+	
+	def fill_third_row(self,parent):
 		self.view_previous_years_button=ttk.Button(parent,
 		    text='View Previous Years',command=self.view_previous)
 		self.num_previous=tki.IntVar(value=1)
 		self.num_previous_label=ttk.Label(parent,text='Number of years to view')
-		self.num_prevvious_entry=ttk.Entry(parent,
-		    textvariable=self.num_previous,width=4)
+		self.num_previous_entry=ttk.Entry(parent,
+		    textvariable=self.num_previous,width=2)
 		
 		self.include_current=tki.BooleanVar(value=False)
 		self.include_current_check=ttk.Checkbutton(parent,
 		    variable=self.include_current,onvalue=True,offvalue=False)
 		self.include_current_label=ttk.Label(parent,text='Including Current?')
-		
+	
+	def fill_fourth_row(self,parent):
 		self.input_previous_year_button=ttk.Button(parent,
 		   text='Input Data For Previous Year',command=self.input_previous)
+	
+	def fill_fifth_row(self,parent):
+		self.quit_button=ttk.Button(parent,text='Quit',command=self.quit)
+	
+	def pack_all(self):
+		self.exchange_frame.pack(expand=True,fill='both')
 		
-		self.quit_button=ttk.Button(parent,text='Quit',command=self.master.destroy)
+		self.pack_first_row()
+		self.pack_second_row()
+		self.pack_third_row()
+		self.pack_fourth_row()
+		self.pack_fifth_row()
+	
+	def pack_first_row(self):
+		self.first_row.pack(side='top',fill='x')
+		self.draw_names_button.pack(side='left')
+		self.family_label.pack(side='left',padx=(8,0))
+		self.family_box.pack(side='left',padx=(0,8))
+		self.exclude_num_previous_label.pack(side='left')
+		self.exclude_num_previous_entry.pack(side='left')
+		
+	def pack_second_row(self):
+		self.second_row.pack(side='top',fill='x')
+		self.exchange_year_label.pack(side='left')
+		self.exchange_year_entry.pack(side='left')
+		self.overwrite_year_label.pack(side='left',padx=(8,0))
+		self.overwrite_year_check.pack(side='left',padx=(0,8))
+		self.skip_members_button.pack(side='left')
+	
+	def pack_third_row(self):
+		self.third_row.pack(side='top',fill='x')
+		self.view_previous_years_button.pack(side='left')
+		self.num_previous_label.pack(side='left',padx=(8,0))
+		self.num_previous_entry.pack(side='left',padx=(0,8))
+		self.include_current_label.pack(side='left')
+		self.include_current_check.pack(side='left')
+	
+	def pack_fourth_row(self):
+		self.fourth_row.pack(side='top',fill='x')
+		self.input_previous_year_button.pack(side='left')
+	
+	def pack_fifth_row(self):
+		self.fifth_row.pack(side='top',fill='x')
+		self.quit_button.pack(side='left')
 	
 	def grid_all(self):
 		self.grid_exchange()
@@ -98,32 +159,33 @@ class ExchangeTab(ttk.Frame):
 		self.exchange_frame.grid(column=0,row=0,sticky='NESW')
 		
 		#place widgets within the frame
-		self.draw_names_button.grid(column=0,row=0,sticky='W')
+		self.draw_names_button.grid(column=0,row=0,columnspan=3,sticky='W')
 		
-		self.family_label.grid(column=1,row=0)
-		self.family_box.grid(column=2,row=0,sticky='W')
+		self.family_label.grid(column=3,row=0)
+		self.family_box.grid(column=4,row=0,sticky='W',columnspan=2)
 		
-		self.exclude_num_previous_label.grid(column=3,row=0,columnspan=2)
-		self.exclude_num_previous_entry.grid(column=5,row=0,sticky='W')
+		self.exclude_num_previous_label.grid(column=6,row=0,columnspan=4)
+		self.exclude_num_previous_entry.grid(column=10,row=0,sticky='W')
 		
-		self.exchange_year_label.grid(column=0,row=1)
+		self.exchange_year_label.grid(column=0,row=1,sticky='E')
 		self.exchange_year_entry.grid(column=1,row=1,sticky='W')
 		
-		self.overwrite_year_check.grid(column=2,row=1)
-		self.overwite_year_label.grid(column=3,row=1)
+		self.overwrite_year_label.grid(column=4,row=1,columnspan=3,sticky='W')
+		self.overwrite_year_check.grid(column=3,row=1,sticky='E')
 		
-		self.skip_members_button.grid(column=0,row=2,columnspan=2)
+		self.skip_members_button.grid(column=0,row=2,columnspan=4,sticky='W')
 		
-		self.view_previous_years_button.grid(column=0,row=3)
-		self.num_previous_label.grid(column=1,row=3)
-		self.num_previous_entry.grid(column=2,row=3,sticky='W')
+		self.view_previous_years_button.grid(column=0,row=3,columnspan=2)
+		self.num_previous_label.grid(column=4,row=3,columnspan=2)
+		self.num_previous_entry.grid(column=6,row=3,sticky='W')
 		
-		self.include_current_label.grid(column=3,row=3,sticky='E')
-		self.include_current_check.grid(column=4,row=3)
+		self.include_current_check.grid(column=7,row=3,sticky='E')
+		self.include_current_label.grid(column=8,row=3,sticky='W',columnspan=2)
 		
-		self.input_previous_years_button.grid(column=0,row=4,columnspan=2)
+		self.input_previous_year_button.grid(column=0,row=4,columnspan=4,sticky='W')
 		
-		self.quit_button.grid(column=0,row=5)
+		
+		self.quit_button.grid(column=0,row=5,sticky='W')
 	
 	#function to add traces on variables
 	#even though we only have one frame, keep the approach (calling another method)
@@ -342,8 +404,12 @@ class ExchangeTab(ttk.Frame):
 			if dir_list:
 				#we want to split on the underscore
 				#but allow for underscores in family names
-				families=[reduce(lambda:s1,s2:s1+'_'+s2,dir_name.split('_')[2:]) for dir_name in dir_list]
+				families=[reduce(lambda s1,s2:s1+'_'+s2,dir_name.split('_')[2:]) for dir_name in dir_list]
 		
 		return families
-		
+	
+	#function for quit button, I think using the 'after' method will avoid
+	#the GUI hanging up as I'm seeing on my mac
+	def quit(self,*args):
+		self.master.after(10,self.master.destroy)
 		
