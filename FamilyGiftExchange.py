@@ -101,6 +101,7 @@ class MainApp:
 #will create app as a MainApp instance
 def main():
 	root=tki.Tk()
+	root.title('Family Gift Exchange')
 	app=MainApp(root)
 	root.mainloop()
 

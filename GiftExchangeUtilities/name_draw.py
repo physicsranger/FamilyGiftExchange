@@ -501,7 +501,7 @@ def add_previous_year(database_file,year,draws,cur=None):
 		#now fill the database
 		query=f'UPDATE exchange SET Year_{year}=? WHERE id=?'
 		for name in draws.keys():
-			cur.execute(query,(name,draws[name]_))
+			cur.execute(query,(name,draws[name]))
 		
 		if con is not None:
 			con.commit()
