@@ -80,11 +80,13 @@ def add_or_update_family_member(database_file,member):
 				significant_other_id)
 		
 		else:
-			print(f'Significant other {significant_other} for {name} is not in the database.')
-			print(f'Adding entry for {significant_other}, will need to update email and address manually.')
+			print(f'Significant other {significant_other} for {name} is not\
+			 in the database.')
+			print(f'Adding entry for {significant_other}, will need to update\
+			 email and address manually.')
 			
 			so_member={'name':significant_other,'email':None,
-			'address_id'=None}
+			'address_id':None}
 			add_family_member(database_file,significant_other)
 			
 			#now add the significant other info for both
@@ -200,7 +202,7 @@ def member_in_database(database_file,name,cur=None):
 	return member is not None
 
 def get_member_id(database_file,name,cur=None):
-	if not is instance(cur,sqlite3.Cursor):
+	if not isinstance(cur,sqlite3.Cursor):
 		con=sqlite3.connect(database_file)
 		cur=con.cursor()
 	else:
@@ -250,7 +252,7 @@ def get_significant_other_id(database_file,name,cur=None):
 	return significant_other_id
 
 def update_significant_other(database_file,member_id,significant_other_id,cur=None):
-	if not is instance(cur,sqlite3.Cursor):
+	if not isinstance(cur,sqlite3.Cursor):
 		con=sqlite3.connect(database_file)
 		cur=con.cursor()
 	else:

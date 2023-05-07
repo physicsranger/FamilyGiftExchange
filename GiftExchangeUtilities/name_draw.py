@@ -1,5 +1,7 @@
 import os,sqlite3,time
 import numpy as np
+from functools import reduce
+from GiftExchangeUtilities.management import get_member_id
 
 ############################################################
 #functions to manage the gift exchange random draw
@@ -13,7 +15,8 @@ overwrite=False,new_year=None):
 		new_year=time.localtime().tm_year
 	else:
 		if not valid_year(str(new_year)):
-			print(f'Year {new_year} has an invalid format, should be the four-digit year, e.g., 2023.\nNot doing anything.')
+			print(f'Year {new_year} has an invalid format, should be\
+			 the four-digit year, e.g., 2023.\nNot doing anything.')
 			return
 	
 	with sqlite3.connect(database_file) as con:
@@ -28,9 +31,13 @@ overwrite=False,new_year=None):
 		WHERE ? IS NOT NULL''',(f'Year_{new_year}',))
 		if cur.execute.fetchone() is not None:
 			if overwrite:
-				print(f'Exchange info exists for {new_year}, overwrite flag set to True, will generate new gift exchange assignments.')
+				print(f'Exchange info exists for {new_year}, overwrite flag\
+				 set to True, will generate new gift exchange assignments.')
+				 
 			else:
-				print(f'Exchange info exists for {new_year}, overwrite flag set to false, will not do anything.')
+				print(f'Exchange info exists for {new_year}, overwrite flag\
+				 set to false, will not do anything.')
+				 
 				return False
 		#commit the changes
 		con.commit()
@@ -51,7 +58,8 @@ overwrite=False,new_year=None):
 		#make sure we have at least 2 names
 		if len(names)<2:
 			print(f'Whoops! We ended up with {len(names)} names.')
-			print('Make sure you have populated your family table and that you did not accidentally skip too many family members.')
+			print('Make sure you have populated your family table and\
+			 that you did not accidentally skip too many family members.')
 			print(f'Not generating gift exchange assignments for {new_year}')
 			return None
 		
@@ -116,14 +124,17 @@ overwrite=False,new_year=None):
 					print('Consider excluding fewer previous year giftees.')
 					BAIL=True
 				
-				if max([member_info[name]['excludes'].count(exclude) for exclude in member_info['name']['excludes']])>1:
+				if max([member_info[name]['excludes'].count(exclude)\
+				 for exclude in member_info['name']['excludes']])>1:
 					#have a duplicate
 					new_excludes=member_info[name]['excludes'][0]
 					for exclude in member_info[name]['excludes'][1:]:
 						if exclude not in new_excludes:
 							new_excludes.append(exclude)
 					if len(new_excludes)==len(names):
-						print(f'ERROR: exclude list for {name} excludes all family members, even after removing duplicates.')
+						print(f'ERROR: exclude list for {name} excludes\
+						 all family members, even after removing duplicates.')
+						 
 						print('Consider excluding fewer previous year giftees.')
 						BAIL=True
 					else:
@@ -138,8 +149,12 @@ overwrite=False,new_year=None):
 		
 		#if we get a None-type object returned, something went wrong
 		if exchange_draws is None:
-			print('Was unable to produce gift exchange draws satisfying all exclusion requirements.')
-			print('Please check output messages, database tables, and choice of number of previous giftees to exclude and try again.')
+			print('Was unable to produce gift exchange draws\
+			 satisfying all exclusion requirements.')
+			 
+			print('Please check output messages, database tables,\
+			 and choice of number of previous giftees to exclude and try again.')
+			 
 			return False
 		
 		#now we need to add the giftee assignments to the exchange table in the
@@ -164,7 +179,8 @@ def output_giftee_assignments(database_file,year=None):
 		year=time.localtime().tm_year
 	#otherwise, check the input year to make sure it is a valid format
 	elif not valid_year(str(new_year)):
-			print(f'Year {year} has an invalid format, should be the four-digit year, e.g., 2023.\nNot doing anything.')
+			print(f'Year {year} has an invalid format,\
+			 should be the four-digit year, e.g., 2023.\nNot doing anything.')
 			return
 	
 	with sqlite3.connect(database_file) as con:
@@ -175,7 +191,8 @@ def output_giftee_assignments(database_file,year=None):
 		FROM exchange''').fetchall()
 		
 		if rows is None:
-			print(f'Uh oh! Gift exchange does not appear to have been generated for {year}.\nWill not produce assignment files.')
+			print(f'Uh oh! Gift exchange does not appear to have\
+			 been generated for {year}.\nWill not produce assignment files.')
 			return
 		
 		for row in rows:
@@ -184,7 +201,8 @@ def output_giftee_assignments(database_file,year=None):
 				    row[f'Year_{year}'],year,cur)
 		
 		print(f'Gift exchange assignment files successfully generated for {year}')
-		print(f'Files can be found in {os.path.join(os.path.dirname(database_file),"Year_"+str(year))}.')
+		print(f'Files can be found in\
+		{os.path.join(os.path.dirname(database_file),"Year_"+str(year))}.')
 		
 	return
 					
@@ -276,7 +294,8 @@ def produce_assignment_file(database_file,gifter_id,giftee_id,year,cur=None):
 		WHERE id=?''',(giftee_address_id,)).fetchone()[0]['address']
 	
 	else:
-		giftee_address="No address indicated in database.\nConsult family member in charge of the exchange."
+		giftee_address="No address indicated in database.\nConsult family\
+		 member in charge of the exchange."
 	
 	with open(os.path.join(gift_exchange_dir,assignment_file_name),'w') as assign_file:
 		assign_file.write(f'{gifter} has {giftee}\nUse address:\n{giftee_address}')
@@ -363,17 +382,18 @@ def get_exclusion_years(database_file,this_year,num_exclude,cur=None):
 	years=[descr[0] for descr in cur.execute('SELECT * FROM exchange').description if descr[0]!='id']
 	years=[[year,this_year-int(year.split('_')[1])] for year in years].sort(reverse=True)
 	if len(years)<num_exclude:
-		print(f'Requested to exclude possible giftees for each family member from {num_exclude} previous years, but there are only {len(years)} years in the exchange.')
-		print('We will only exclude giftees for each family member using {len(years)} years.')
+		print(f'Requested to exclude possible giftees for each family member from\
+		{num_exclude} previous years, but there are only {len(years)} years in the\
+		exchange.')
+		print('We will only exclude giftees for each family member using {len(years)}\
+		years.')
 		num_exclude=len(years)
-	years_to_exclue=[year[0] for year in years[:num_exclude]]
+	years_to_exclude=[year[0] for year in years[:num_exclude]]
 	
 	if con is not None:
 		con.close()
 	
 	return years_to_exclude
-	
-	
 
 #function to check if a valid year has been specified
 #done as a separate function so the 'check' variable exists
@@ -386,3 +406,112 @@ def valid_year(year_string):
 		return True
 	except ValueError:
 		return False
+
+#################################################################################
+##functions to query the exchange table to view previous and current name draws
+##and to populate the exchange table with info from previous years before the
+##database was used to manage name draws
+#################################################################################
+
+def get_previous_years(database_file,number_to_view=1,include_latest=False,cur=None):
+	#do a few sanity checks on the number_to_view_parameter
+	if number_to_view<=0:
+		raise ValueError(f'Requested non-sensical {number_to_view} years to view.')
+	if not isinstance(number_to_view,int):
+		raise TypeError(f'"number_to_view" argument must be type integer,\
+		 not {type(number_to_view)}')
+	
+	#allow for variation in how the function is called
+	if not isinstance(cur,sqlite3.Cursor):
+		con=sqlite3.connect(database_file)
+		cur=con.cursor()
+	else:
+		con=None
+	
+	#get the years we have to work with
+	years=[descr[0] for descr in\
+	    cur.execute('SELECT * FROM exchange').description if descr[0]!='id']
+	#sort the years in reverse order
+	years.sort(reverse=True)
+	
+	#if we're not including the latest year, ditch it
+	if not include_latest:
+		years=years[1:]
+	
+	#get the years we want
+	years=years[:number_to_view]
+	
+	#let's go ahead and sort them again to have a more normal viewing order
+	years.sort()
+	
+	#build the query, we want the id column and the column for each year
+	query='SELECT id'
+	query+=reduce(lambda s1,s2:f'{s1}, Year_{s2}',years)
+	qury+=' FROM exchange'
+	
+	#this should give me tuples with id,year_0,year_1,..
+	exchange_rows=cur.execute(query).fetchall()
+	
+	#now we want a name lookup dictionary
+	name_rows=cur.execute('''SELECT id, name
+	FROM family''').fetchall()
+	
+	name_lookup=dict(name_rows)
+	#get a list of the names to make things easier for calling functions
+	names=list(name_lookup.values())
+	
+	#now, make a nested dictionary to contain the draw info for each year
+	previous_draws={}
+	
+	#need to have a way to deal with ids in the previous exchange year
+	#for family members who have been removed, so we can't be as succinct
+	#using the .get will return None if id is not in the lookup, but we
+	#don't want a None type for a key
+	for year_idx,year in enumerate(years):
+		previous_draws[year]={}
+		for row in exchange_rows:
+			if row[0] in name_lookup.keys():
+				previous_draws[year][name_lookup.get(row[0])]=\
+				name_lookup.get(row[year_idx+1])
+			else:
+				previous_draws[year]['UNKNOWN']=name_lookup.get(row[year_idx+1])
+				if 'UNKNOWN' not in names:
+					names.append('UNKOWN')
+	
+	if con is not None:
+		con.close()
+	
+	return previous_draws,names
+
+
+def add_previous_year(database_file,year,draws,cur=None):
+	#check to make sure that the year input is valid
+	if valid_year(str(year)):
+		if not isinstance(cur,sqlite3.Cursor):
+			con=sqlite3.connect(database_file)
+			cur=con.cursor()
+		else:
+			con=None
+		
+		id_lookup=dict((name,get_member_id(None,name,cur)) for name in draws.keys())
+		
+		#add the new year to the exchange database
+		add_new_year(None,year,cur)
+		
+		#now fill the database
+		query=f'UPDATE exchange SET Year_{year}=? WHERE id=?'
+		for name in draws.keys():
+			cur.execute(query,(name,draws[name]_))
+		
+		if con is not None:
+			con.commit()
+			con.close()
+	
+	else:
+		print(f'{year} is not a valid 4-digit year value')
+		    
+	
+
+
+
+

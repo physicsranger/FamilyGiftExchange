@@ -6,7 +6,7 @@ from functools import reduce
 
 from GiftExchangeUtilities.create import create_database
 
-from GiftExchangeUtilities.management import add_or_update_family_member,
+from GiftExchangeUtilities.management import add_or_update_family_member,\
 remove_family_member,query_member
 
 #make a class for the main tab where you manage your family database
@@ -188,10 +188,10 @@ class FamilyTab(ttk.Frame):
 			#make this when we update the value, but we'll check just in case
 			if not hasattr(self,'database_directory'):
 				self.database_directory=os.path.join(self.app.app_dir,
-				'GiftExchange_data',f'data_family_{self.family.get()}')
+				    'GiftExchange_data',f'data_family_{self.family.get()}')
 				
 				self.database_file=os.path.join(self.database_directory,
-				"GiftExchange.db")
+				    "GiftExchange.db")
 			
 			#check to make sure that the GiftExchange_data directory exists
 			#since this is in the .gitignore file
@@ -274,7 +274,7 @@ class FamilyTab(ttk.Frame):
 			if dir_list:
 				#we want to split on the underscore
 				#but allow for underscores in family names
-				families=[reduce(lambda:s1,s2:s1+'_'+s2,dir_name.split('_')[2:])\
+				families=[reduce(lambda s1,s2:s1+'_'+s2,dir_name.split('_')[2:])\
 				 for dir_name in dir_list]
 		
 		return families
