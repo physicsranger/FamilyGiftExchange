@@ -70,7 +70,7 @@ class MainApp:
 		#create a terminal window
 		self.terminal_window=TermOut(self.terminal)
 		
-		self.grid_all()
+		self.pack_all()
 		
 		#at the very last assign stdout and stderr to the terminal window, otherwise
         #we miss important code errors
@@ -84,16 +84,23 @@ class MainApp:
 		self.exchange_tab=ExchangeTab(self.notebook,self,self.master,
 		    text='Gift Exchange')
 
-	def grid_all(self):
-		self.family_tab.grid_all()
+	def pack_all(self):
+		self.notebook.pack(side='top',expand=True,fill='both')
 		
-		self.exhange_tab.grid_all()
+		self.family_tab.pack_all()
 		
-		#grid the terminal window
-		self.terminal.grid(column=0,row=1,sticky='NESW')
+		self.exhange_tab.pack_all()
 		
-		self.text_y_scroll.grid(column=1,row=2,sticky='NES')
-		self.text_x_scroll.grid(column=0,row=3,columnspan=2,sticky='EW')
+		#place the terminal window
+		self.terminal.pack(side='bottom',fill='both',expand=True)
+		
+		self.text_y_scroll.pack(side='left',fill='y',expand=True)
+		self.text_x_scroll.pack(side='bottom',fill='x',expand=True)
+		
+		#self.terminal.grid(column=0,row=1,sticky='NESW')
+		
+		#self.text_y_scroll.grid(column=1,row=2,sticky='NES')
+		#self.text_x_scroll.grid(column=0,row=3,columnspan=2,sticky='EW')
 
 
 

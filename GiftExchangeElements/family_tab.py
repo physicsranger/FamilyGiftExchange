@@ -57,108 +57,182 @@ class FamilyTab(ttk.Frame):
 		    onvalue=True,offvalue=False)
 		
 	def fill_family_frame(self,parent):
+		#make the first row with family member and significant other
+		#labels and dropdown boxes
+		self.first_family_row=ttk.Frame(parent,borderwidth=1,relief='flat')
+		self.fill_first_family_row(self.first_family_row)
+		
+		#make the second row for the email address
+		self.second_family_row=ttk.Frame(parent,borderwidth=1,relief='flat')
+		self.fill_second_family_row(self.second_family_row)
+		
+		#make the third row for address line 1
+		self.third_family_row=ttk.Frame(parent,borderwidth=1,relief='flat')
+		self.fill_third_family_row(self.third_family_row)
+		
+		#make the fourth row for address line 2
+		self.fourth_family_row=ttk.Frame(parent,borderwidth=1,relief='flat')
+		self.fill_fourth_family_row(self.fourth_family_row)
+		
+		#make the fifth row for city, state, and zip
+		self.fifth_family_row=ttk.Frame(parent,borderwidth=1,relief='flat')
+		self.fill_fifth_family_row(self.fifth_family_row)
+		
+		#make the sixth row for country
+		self.sixth_family_row=ttk.Frame(parent,borderwidth=1,relief='flat')
+		self.fill_sixth_family_row(self.sixth_family_row)
+		
+		#make the seventh row for buttons
+		self.seventh_family_row=ttk.Frame(parent,borderwidth=1,relief='flat')
+		self.fill_seventh_family_row(self.seventh_family_row)
+	
+	def fill_first_family_row(self,parent):
 		#variable, label, and combobox entry for a family member
 		self.family_member=tki.StringVar()
-		self.family_member_label=ttk.Label(parent,text='Family Member')
+		self.family_member_label=ttk.Label(parent,text='Family Member:')
 		self.family_member_box=ttk.Combobox(parent,textvariable=self.family_member)
 		self.family_member_box.bind('<<ComboboxSelected>>',self.get_member_info)
 		
 		#significant other variable, label, and combobox
 		self.significant_other=tki.StringVar()
-		self.significant_other_label=ttk.Label(parent,text='Significant Other')
+		self.significant_other_label=ttk.Label(parent,text='Significant Other:')
 		self.significant_other_box=ttk.Combobox(parent,
 		    textvariable=self.significant_other)
-		
+	
+	def fill_second_family_row(self,parent):
 		#now create variables and widgets for the family member
 		#email and address info
 		self.email=tki.StringVar()
-		self.email_label=ttk.Label(parent,text='Email address')
-		self.email_entry=ttk.Entry(parent,textvariable=self.email,width=30)
-		
+		self.email_label=ttk.Label(parent,text='Email address:')
+		self.email_entry=ttk.Entry(parent,textvariable=self.email)#,width=30)
+	
+	def fill_third_family_row(self,parent):
 		self.address_line_1=tki.StringVar()
+		self.address_line_1_label=ttk.Label(parent,text='Address line 1')
+		self.address_line_1_entry=ttk.Entry(parent,
+		    textvariable=self.address_line_1)#,width=40)
+	
+	def fill_fourth_family_row(self,parent):
 		self.address_line_2=tki.StringVar()
+		self.address_line_2_label=ttk.Label(parent,text='Address line 2')
+		self.address_line_2_entry=ttk.Entry(parent,
+		    textvariable=self.address_line_2)#,width=40)
+	
+	def fill_fifth_family_row(self,parent):
 		self.city=tki.StringVar()
 		self.state=tki.StringVar()
 		self.zip_code=tki.StringVar()
-		self.country=tki.StringVar()
 		
-		self.address_line_1_label=ttk.Label(parent,text='Address line 1')
-		self.address_line_2_label=ttk.Label(parent,text='Address line 2')
 		self.city_label=ttk.Label(parent,text='City')
 		self.state_label=ttk.Label(parent,text='State/Province')
 		self.zip_code_label=ttk.Label(parent,text='Zip code')
-		self.country_label=ttk.Label(parent,text='Country')
-		
-		self.address_line_1_entry=ttk.Entry(parent,
-		    textvariable=self.address_line_1,width=40)
-		
-		self.address_line_2_entry=ttk.Entry(parent,
-		    textvariable=self.address_line_2,width=40)
 		
 		self.city_entry=ttk.Entry(parent,textvariable=self.city,width=12)
 		self.state_entry=ttk.Entry(parent,textvariable=self.state,width=12)
 		self.zip_code_entry=ttk.Entry(parent,textvariable=self.zip_code,width=8)
+	
+	def fill_sixth_family_row(self,parent):
+		self.country=tki.StringVar()
+		self.country_label=ttk.Label(parent,text='Country')
 		self.country_entry=ttk.Entry(parent,textvariable=self.country,width=12)
-		
-		#add a couple of buttons
+	
+	def fill_seventh_family_row(self,parent):
 		self.add_or_update_member_button=ttk.Button(parent,text='Add/Update Member Info',
 		    command=self.add_or_update_member,state='disabled')
 		
 		self.remove_member_button=ttk.Button(parent,text='Remove Member',
 		    command=self.remove_member,state='disabled')
 		
-		self.quit_button=ttk.Button(parent,text='Quit',command=self.master.destroy)
+		self.quit_button=ttk.Button(parent,text='Quit',command=self.quit)
 	
-	def grid_all(self):
-		self.grid_create_frame()
+	def pack_all(self):
+		self.pack_create_frame()
 		
-		self.grid_family_frame()
+		self.pack_family_frame()
 	
-	def grid_create_frame(self):
+	def pack_create_frame(self):
 		#first, place the frame itself at top, tell it to fill horizontally
-		self.create_frame.grid(column=0,row=0,sticky='NESW')
+		self.create_frame.pack(side='top',fill='x',expand=True)
 		
 		#now, place the widgets within the frame
-		self.create_button.grid(column=0,row=0,sticky='W')
+		self.create_button.pack(side='left')
 		
-		self.family_label.grid(column=1,row=0)
-		self.family_box.grid(column=2,row=0,sticky='W')
+		self.family_label.pack(side='left',padx=(8,0))
+		self.family_box.pack(side='left',padx=(0,8))
 		
-		self.overwrite_check.grid(column=3,row=0,sticky='E')
-		self.overwrite_label.grid(column=4,row=0)
+		self.overwrite_check.pack(side='left')
+		self.overwrite_label.pack(side='left')
 	
-	def grid_family_frame(self):
+	def pack_family_frame(self):
 		#first,place the frame itself, below create frame, set to fill horizontally
-		self.family_frame.grid(column=0,row=1,sticky='NESW')		
+		self.family_frame.pack(side='top',fill='both',expand=True)
 		
-		#now place widgets within the frame
-		self.family_member_label.grid(column=0,row=0)
-		self.family_member_box.grid(column=1,row=0,columnspan=2,sticky='W')
+		#now pack the rows
+		self.pack_first_family_row()
 		
-		self.significant_other_label.grid(column=3,row=0)
-		self.significant_other_box.grid(column=4,row=0,columnspan=2,sticky='W')
+		self.pack_second_family_row()
 		
-		self.email_label.grid(column=0,row=1)
-		self.email_entry.grid(column=1,row=1,columnspan=3,sticky='W')
+		self.pack_third_family_row()
 		
-		self.address_line_1_label.grid(column=0,row=2)
-		self.address_line_1_entry.grid(column=1,row=2,columnspan=4,sticky='W')
-		self.address_line_2_label.grid(column=0,row=3)
+		self.pack_fourth_family_row()
+		
+		self.pack_fifth_family_row()
+		
+		self.pack_sixth_family_row()
+		
+		self.pack_seventh_family_row()
+		
+	def pack_first_family_row(self):
+		self.first_family_row.pack(side='top',fill='x')
+		
+		self.family_member_label.pack(side='left')
+		self.family_member_box.pack(side='left',padx=(0,8))
+		
+		self.significant_other_label.pack(side='left')
+		self.significant_other_box.pack(side='left')
+	
+	def pack_second_family_row(self):
+		self.second_family_row.pack(side='top',fill='x')
+		
+		self.email_label.pack(side='left')
+		self.email_entry.pack(side='left',fill='x',expand=True,padx=(0,8))
+		
+	def pack_third_family_row(self):
+		self.third_family_row.pack(side='top',fill='x')
+		
+		self.address_line_1_label.pack(side='left'_)
+		self.address_line_1_entry.pack(side='left',fill='x',expand=True,padx=(0,8))
+		
+	def pack_fourth_family_row(self):
+		self.fourth_family_row.pack(side='top',fill='x')
+		
+		self.address_line_2_label.pack(side='left')
 		self.address_line_2_entry.grid(column=1,row=3,columnspan=4,sticky='W')
+	
+	def pack_fifth_family_row(self):
+		self.fifth_family_row.pack(side='top',fill='x')
 		
-		self.city_label.grid(column=0,row=4)
-		self.city_entry.grid(column=1,row=4,sticky='W')
-		self.state_label.grid(column=2,row=4)
-		self.state_entry.grid(column=3,row=4,sticky='W')
-		self.zip_code_label.grid(column=4,row=4)
-		self.zip_code_entry.grid(column=5,row=4,sticky='W')
+		self.city_label.pack(side='left')
+		self.city_entry.pack(side='left',padx=(0,8))
 		
-		self.country_label.grid(column=0,row=5)
-		self.country_entry.grid(column=1,row=5,sticky='W')
+		self.state_label.pack(side='left')
+		self.state_entry.pack(side='left',padx(0,8))
 		
-		self.add_or_update_member_button.grid(column=0,row=6,columnspan=2,sticky='W')
-		self.remove_member_button.grid(column=2,row=6,columnspan=2,sticky='W')
-		self.quit_button.grid(column=4,row=6)
+		self.zip_code_label.pack(side='left')
+		self.zip_code_entry.pack(side='left')
+		
+	def pack_sixth_family_row(self):
+		self.sixth_family_row.pack(side='top',fill='x')
+		
+		self.country_label.pack(side='left')
+		self.country_entry.pack(side='left')
+		
+	def pack_seventh_family_row(self):
+		self.seventh_family_row.pack(side='top',fill='x')
+		
+		self.add_or_update_member_button.pack(side='left',padx=(0,8))
+		self.remove_member_button.pack(side='left',padx=(8,8))
+		self.quit_button.pack(side='left',padx=(8,0))
 	
 	#function to add traces to variables
 	#currently it is a bit odd to add traces to the frames separately
@@ -359,5 +433,8 @@ class FamilyTab(ttk.Frame):
 		else:
 			self.add_or_update_member_button['state']='disabled'
 			self.remove_member_buton['state']='disabled'
-		
-		
+	
+	#function for quit button, I think using the 'after' method will avoid
+	#the GUI hanging up as I'm seeing on my mac
+	def quit(self,*args):
+		self.master.after(10,self.master.destroy)

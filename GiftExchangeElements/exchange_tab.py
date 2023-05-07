@@ -151,41 +151,6 @@ class ExchangeTab(ttk.Frame):
 		self.fifth_row.pack(side='top',fill='x')
 		self.quit_button.pack(side='left')
 	
-	def grid_all(self):
-		self.grid_exchange()
-	
-	def grid_exchange(self):
-		#grid the frame itself
-		self.exchange_frame.grid(column=0,row=0,sticky='NESW')
-		
-		#place widgets within the frame
-		self.draw_names_button.grid(column=0,row=0,columnspan=3,sticky='W')
-		
-		self.family_label.grid(column=3,row=0)
-		self.family_box.grid(column=4,row=0,sticky='W',columnspan=2)
-		
-		self.exclude_num_previous_label.grid(column=6,row=0,columnspan=4)
-		self.exclude_num_previous_entry.grid(column=10,row=0,sticky='W')
-		
-		self.exchange_year_label.grid(column=0,row=1,sticky='E')
-		self.exchange_year_entry.grid(column=1,row=1,sticky='W')
-		
-		self.overwrite_year_label.grid(column=4,row=1,columnspan=3,sticky='W')
-		self.overwrite_year_check.grid(column=3,row=1,sticky='E')
-		
-		self.skip_members_button.grid(column=0,row=2,columnspan=4,sticky='W')
-		
-		self.view_previous_years_button.grid(column=0,row=3,columnspan=2)
-		self.num_previous_label.grid(column=4,row=3,columnspan=2)
-		self.num_previous_entry.grid(column=6,row=3,sticky='W')
-		
-		self.include_current_check.grid(column=7,row=3,sticky='E')
-		self.include_current_label.grid(column=8,row=3,sticky='W',columnspan=2)
-		
-		self.input_previous_year_button.grid(column=0,row=4,columnspan=4,sticky='W')
-		
-		
-		self.quit_button.grid(column=0,row=5,sticky='W')
 	
 	#function to add traces on variables
 	#even though we only have one frame, keep the approach (calling another method)
