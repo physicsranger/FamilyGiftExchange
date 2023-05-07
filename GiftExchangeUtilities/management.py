@@ -17,32 +17,35 @@ def add_or_update_family_member(database_file,member):
 		return
 	
 	if 'address' in member['family'].keys():
-		address_id=get_address_id(database_file,address)
+		address_id=get_address_id(database_file,member['family']['address'])
 		if address_id is None:
 			#first, we need to check if this family member already has an address
 			#in the table
-			with sqlite3.connect(database_file) as con:
-				cur=con.cursor()
-				address_id=cur.execute('''SELECT address_id
-				FROM family
-				WHERE name=?''',(name,)).fetchone()
-				
-				#if the current_address is None, then they aren't in
-				#the database yet so we need to add an address for them
-				#alternatively, they may have moved but someone else still 
-				#needs that address so we'll check that and add a new entry still
-				if address_id is None or count_at_address(None,address_id,cur)>1:
-					add_address(None,address,cur)
-					address_id=get_address_id(None,address,cur)
-				
-				#if they do have an address_id, then we can assume that they
-				#have moved and no one else still lives there so
-				#we can simply update the address
-				else:
-					update_address(None,address_id,address,cur)
-				#either way, we need to commit the changes before
-				#exiting the with statement
-				con.commit()
+			con=sqlite3.connect(database_file)
+			cur=con.cursor()
+			address_id=cur.execute('''SELECT address_id
+			FROM family
+			WHERE name=?''',(name,)).fetchone()[0]
+			
+			#if the current_address is None, then they aren't in
+			#the database yet or had no address assigned
+			#so we need to add an address for them
+			#alternatively, they may have moved but someone else still 
+			#needs that address so we'll check that and add a new entry still
+			if address_id is None or count_at_address(None,address_id,cur)>1:
+				add_address(None,member['family']['address'],cur)
+				address_id=get_address_id(None,member['family']['address'],cur)
+			
+			#if they do have an address_id, then we can assume that they
+			#have moved and no one else still lives there so
+			#we can simply update the address
+			else:
+				update_address(None,address_id,member['family']['address'],cur)
+			#either way, we need to commit the changes before
+			#exiting the with statement
+			con.commit()
+			con.close()
+		
 		elif address_changed(database_file,address_id,name):
 			#check if multiple people have that address
 			if count_at_address(database_file,address_id)>1:
@@ -80,14 +83,14 @@ def add_or_update_family_member(database_file,member):
 				significant_other_id)
 		
 		else:
-			print(f'Significant other {significant_other} for {name} is not\
-			 in the database.')
+			print(f'Significant other {significant_other} for {name}\
+			 is not in the database.')
 			print(f'Adding entry for {significant_other}, will need to update\
 			 email and address manually.')
 			
 			so_member={'name':significant_other,'email':None,
 			'address_id':None}
-			add_family_member(database_file,significant_other)
+			add_family_member(database_file,so_member)
 			
 			#now add the significant other info for both
 			add_significant_other(database_file,
@@ -103,44 +106,45 @@ def add_or_update_family_member(database_file,member):
 
 #function to remove a family member from the database
 def remove_family_member(database_file,name):
-	with sqlite3.connect(database_file) as con:
-	    #use sqlite3.Row so that we can get all the info about
-	    #the member as an easy to work with dictionary
-		con.row_factor=sqlite3.Row
-		cur=con.cursor()
-		member=cur.execute('''SELECT *
-		FROM family
-		WHERE name=?''',(name,)).fetchone()
-		
-		if member is None:
-			print(f'{name} is not in database, nothing to do.')
-			return
-		
-		#if this family member is the only one at the address in the
-		#addresses table, remove that from the table
-		if count_at_address(None,member['address_id'],cur)<1:
-			cur.execute('''DELETE *
-			FROM addresses
-			WHERE id=?''',(member['address_id'],))
-		
-		#now remove the member from the significant_other and family tables
-		#(need to think about it, but I believe that is the correct order)
+	con=sqlite3.connect(database_file)
+    #use sqlite3.Row so that we can get all the info about
+    #the member as an easy to work with dictionary
+	con.row_factor=sqlite3.Row
+	cur=con.cursor()
+	member=cur.execute('''SELECT *
+	FROM family
+	WHERE name=?''',(name,)).fetchone()
+	
+	if member is None:
+		print(f'{name} is not in database, nothing to do.')
+		return
+	
+	#if this family member is the only one at the address in the
+	#addresses table, remove that from the table
+	if count_at_address(None,member['address_id'],cur)<1:
 		cur.execute('''DELETE *
-		FROM significant_other
-		WHERE id=?''',(member['id'],))
-		
-		cur.execute('''DELETE *
-		FROM family
-		WHERE id=?''',(member['id'],))
-		
-		#and update the info for whoever might have had this
-		#member as their significant_other
-		cur.execute('''UPDATE significant_other
-		SET so_id=NULL
-		WHERE so_id=?''',(member['id'],))
-		
-		#commit the changes
-		con.commit()
+		FROM addresses
+		WHERE id=?''',(member['address_id'],))
+	
+	#now remove the member from the significant_other and family tables
+	#(need to think about it, but I believe that is the correct order)
+	cur.execute('''DELETE *
+	FROM significant_other
+	WHERE id=?''',(member['id'],))
+	
+	cur.execute('''DELETE *
+	FROM family
+	WHERE id=?''',(member['id'],))
+	
+	#and update the info for whoever might have had this
+	#member as their significant_other
+	cur.execute('''UPDATE significant_other
+	SET so_id=NULL
+	WHERE so_id=?''',(member['id'],))
+	
+	#commit the changes
+	con.commit()
+	con.close()
 	return
 
 #############################################################
@@ -156,9 +160,10 @@ def add_family_member(database_file,member,cur=None):
 		con=None
 	
 	#first, we add the new family member to the family table
+	#omitting the 'id' column so it will be automatically autoincremented
 	cur.execute('''INSERT INTO family
-	(id,name,email,address_id)
-	VALUES (NULL,?,?,?)''',(member['name'],member['email'],member['address_id']))
+	(name,email,address_id)
+	VALUES (?,?,?)''',(member['name'],member['email'],member['address_id']))
 	
 	new_id=get_member_id(None,member['name'],cur)
 	
@@ -198,8 +203,8 @@ def member_in_database(database_file,name,cur=None):
 		con=None
 	member=cur.execute('''SELECT COUNT(*)
 	FROM family
-	WHERE name=?''',(name,)).fetchone()
-	return member is not None
+	WHERE name=?''',(name,)).fetchone()[0]
+	return member>0
 
 def get_member_id(database_file,name,cur=None):
 	if not isinstance(cur,sqlite3.Cursor):
@@ -275,8 +280,9 @@ def get_address_id(database_file,address,cur=None):
 		cur=con.cursor()
 	else:
 		con=None
-	address_id=cur.execute(f'''SELECT id FROM addresses
-	WHERE address LIKE "?" ''',(address,)).fetchone()
+	address_id=cur.execute(f'''SELECT id
+	FROM addresses
+	WHERE address LIKE ? ''',(address,)).fetchone()
 	if con is not None:
 		con.close()
 	address_id=(address_id if address_id is None else address_id[0])
@@ -304,7 +310,8 @@ def add_address(database_file,address,cur=None):
 	else:
 		con=None
 	cur.execute('''INSERT INTO addresses
-	(id,address)=(NULL,?)''',(address,))
+	(address)
+	VALUES (?)''',(address,))
 	if con is not None:
 		con.commit()
 		con.close()
@@ -354,22 +361,23 @@ def query_member(database_file,name,cur=None):
 		ON f.id=s.id
 		JOIN addresses as a
 		ON f.address_id=a.id
-		WHERE f.name=(?)''',(name,)).fetchone()
+		WHERE f.name=?''',(name,)).fetchone()
 		
 		#if a cursor was passed in, we don't know what row_factory was
 		#used, check if it has a dict-like structure or not
-		if not hasattr(row,'keys'):
-			if len(row)==1:
-				row=row[0]
-			row={'so_id':row[0],
-			'email':row[1],
-			'address':row[2]}
-		
-		if row['so_id'] is not None:
-			row['significant_other']=cur.execute('''SELECT name
-				FROM family WHERE id=?''',(row['so_id'],)).fetchone()['name']
-		else:
-			row['significant_other']=''
+		if row is not None:
+			if not hasattr(row,'keys'):
+				if len(row)==1:
+					row=row[0]
+				row={'so_id':row[0],
+				'email':row[1],
+				'address':row[2]}
+			
+			if row['so_id'] is not None:
+				row['significant_other']=cur.execute('''SELECT name
+					FROM family WHERE id=?''',(row['so_id'],)).fetchone()['name']
+			else:
+				row['significant_other']=''
 		
 		if con is not None:
 			con.close()

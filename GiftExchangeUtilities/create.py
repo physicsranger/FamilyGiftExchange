@@ -1,4 +1,5 @@
-import os,sqlite3
+import os,sqlite3,time
+from shutil import copyfile
 
 #################################################
 #a function to create a new database file
@@ -12,61 +13,69 @@ def create_database(database_file,overwrite=False):
 	if os.path.exists(database_file):
 		if overwrite:
 			print(f'NOTE: {database_file} exists but overwrite set to True.')
-			if os.path.isdir(os.path.join(os.sep,'tmp')):
-				backup_file=os.path.join(os.sep,'tmp',database_file.split(os.sep)[-1])
-			else:
-				backup_file=os.path.join(os.sep,
-				*database_file.split(os.sep)[1:-1],
+			backup_file=os.path.join(os.sep,*database_file.split(os.sep)[1:-1],
 				'bkup_'+database_file.split(os.sep)[-1])
 			#need some logic to catch windows systems
 			copyfile(database_file,backup_file)
 			os.remove(database_file)
-			print(f'A backup of the existing database has been moved to {backup_file} and the original removed.')
-			print('NOTE: If using the GUI, the backup file will be deleted upon exit with the "Quit" button.')
+			print(f'A backup of the existing database has been moved to\
+			 {backup_file} and the original removed.')
+			print('NOTE: Currently, you will need to manually rename this file\
+			 to recover the previous database, which will be overwritten if you\
+			  try to create the database again with overwrite set to True.')
 		else:
-			raise FileExistsError(f'{database_file} already exists but overwrite set to false')
+			raise FileExistsError(f'{database_file} already exists but overwrite\
+			 set to False')
 	
 	#now, create the database
-	with sqlite3.connect(database_file) as connection:
-		cursor=connection.cursor()
-		
-		#create the necessary tables
-		print('Creating tables',end='...')
-		
-		#first, the family table
-		cursor.execute('''CREATE TABLE family
-		(id INT UNSIGNED AUTO_INCREMENT,
-		name VARCHAR(64),
-		email VARCHAR(128),
-		address_id INT UNSIGNED,
-		constraint pk_family PRIMARY KEY (id),
-		constraint fk_address FOREIGN KEY (address_id) REFERENCES id (address))''')
-		
-		#next, the significant_other table
-		cursor.execute('''CREATE TABLE significant_other
-		(id INT UNSIGNED,
-		so_id INT UNSIGNED,
-		constraint pk_significant_other PRIMARY KEY (id),
-		constraint fk_id FOREIGN KEY (id) REFERENCES id (family))''')
-		###initially had a constraint on the so_id column as well, but this value can
-		###be null, have to think about that
-		
-		#next, the address table
-		cursor.execute('''CREATE TABLE addresses
-		(id INT UNSIGNED AUTO_INCREMENT,
-		address TEXT,
-		constraint pk_address PRIMARY KEY (id))''')
-		
-		#finally, the exchange table
-		#will start with just one year
-		current_year=f'Year_{time.localtime().tm_year}'
-		cursor.execute(f'''CREATE TABLE exchange
-		(id INT UNSIGNED,
-		{current_year} INT UNSIGNED,
-		constraint pk_exchange PRIMARY KEY (id),
-		constraint fk_id FOREIGN KEY (id) REFERENCES id (family))''')
-		
-		connection.commit()
-		print('finished.')
+	con=sqlite3.connect(database_file)
+	cur=con.cursor()
+	
+	#create the necessary tables
+	print('Creating tables',end='...')
+	
+	#first, the family table
+	cur.execute('''CREATE TABLE family
+	(id INT UNSIGNED PRIMARY KEY,
+	name VARCHAR(64),
+	email VARCHAR(128),
+	address_id INT UNSIGNED,
+	constraint pk_family PRIMARY KEY (id),
+	constraint fk_address FOREIGN KEY (address_id) REFERENCES id (address))''')
+	
+	print('',end='...')
+	
+	#next, the significant_other table
+	cur.execute('''CREATE TABLE significant_other
+	(id INT UNSIGNED,
+	so_id INT UNSIGNED,
+	constraint pk_significant_other PRIMARY KEY (id),
+	constraint fk_id FOREIGN KEY (id) REFERENCES id (family))''')
+	###initially had a constraint on the so_id column as well, but this value can
+	###be null, have to think about that
+	
+	print('',end='...')
+	
+	#next, the address table
+	cur.execute('''CREATE TABLE addresses
+	(id INT UNSIGNED PRIMARY KEY,
+	address TEXT,
+	constraint pk_address PRIMARY KEY (id))''')
+	
+	print('',end='...')
+	
+	#finally, the exchange table
+	#will start with just one year
+	current_year=f'Year_{time.localtime().tm_year}'
+	cur.execute(f'''CREATE TABLE exchange
+	(id INT UNSIGNED,
+	{current_year} INT UNSIGNED,
+	constraint pk_exchange PRIMARY KEY (id),
+	constraint fk_id FOREIGN KEY (id) REFERENCES id (family))''')
+	
+	con.commit()
+	con.close()
+	
+	print('finished.')
 	
 	return

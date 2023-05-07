@@ -19,156 +19,157 @@ overwrite=False,new_year=None):
 			 the four-digit year, e.g., 2023.\nNot doing anything.')
 			return
 	
-	with sqlite3.connect(database_file) as con:
-		cur=con.cursor()
+	con=sqlite3.connect(database_file)
+	cur=con.cursor()
 		
-		#add a new column for this year if it doesn't exist already
-		add_new_year(None,new_year,cur)
-		
-		#now, we're going to check if info for this year exists
-		cur.execute('''SELECT COUNT(*)
-		FROM exchange
-		WHERE ? IS NOT NULL''',(f'Year_{new_year}',))
-		if cur.execute.fetchone() is not None:
-			if overwrite:
-				print(f'Exchange info exists for {new_year}, overwrite flag\
-				 set to True, will generate new gift exchange assignments.')
-				 
-			else:
-				print(f'Exchange info exists for {new_year}, overwrite flag\
-				 set to false, will not do anything.')
-				 
-				return False
-		#commit the changes
-		con.commit()
-		
-		#get a tuple of names to be in the exchange
-		#excluding anyone in skip_names, if that is not empty
-		query="SELECT name FROM family"
-		if skip_names:
-			query+=" WHERE name NOT IN ("
-			for _ in range(len(skip_names)-1):
-				query+="?,"
-			query+="?)"
-			cur.execute(query,tuple(skip_names))
+	#add a new column for this year if it doesn't exist already
+	add_new_year(None,new_year,cur)
+	
+	#now, we're going to check if info for this year exists
+	cur.execute('''SELECT COUNT(*)
+	FROM exchange
+	WHERE ? IS NOT NULL''',(f'Year_{new_year}',))
+	if cur.execute.fetchone() is not None:
+		if overwrite:
+			print(f'Exchange info exists for {new_year}, overwrite flag\
+			 set to True, will generate new gift exchange assignments.')
+			 
 		else:
-			cur.execute(query)
-		names=[name[0] for name in cur.fetchall()]
-		
-		#make sure we have at least 2 names
-		if len(names)<2:
-			print(f'Whoops! We ended up with {len(names)} names.')
-			print('Make sure you have populated your family table and\
-			 that you did not accidentally skip too many family members.')
-			print(f'Not generating gift exchange assignments for {new_year}')
-			return None
-		
-		#get the columns from the exchange table to be used in building
-		#lists of members to exclude for each member
-		#(based on significant other and if they had them in the last few exchanges)
-		#this way we only do this step once
-		exclude_years=get_exclusion_years(None,new_year,num_previous_exclude,cur)
-		
-		#change the row_factory to allow for working with results
-		#like dictionaries, make sure to make a new cursor
-		con.row_factory=sqlite3.Row
-		cur=con.cursor()
+			print(f'Exchange info exists for {new_year}, overwrite flag\
+			 set to false, will not do anything.')
+			 
+			return False
+	#commit the changes
+	con.commit()
+	
+	#get a tuple of names to be in the exchange
+	#excluding anyone in skip_names, if that is not empty
+	query="SELECT name FROM family"
+	if skip_names:
+		query+=" WHERE name NOT IN ("
+		for _ in range(len(skip_names)-1):
+			query+="?,"
+		query+="?)"
+		cur.execute(query,tuple(skip_names))
+	else:
+		cur.execute(query)
+	names=[name[0] for name in cur.fetchall()]
+	
+	#make sure we have at least 2 names
+	if len(names)<2:
+		print(f'Whoops! We ended up with {len(names)} names.')
+		print('Make sure you have populated your family table and\
+		 that you did not accidentally skip too many family members.')
+		print(f'Not generating gift exchange assignments for {new_year}')
+		return None
+	
+	#get the columns from the exchange table to be used in building
+	#lists of members to exclude for each member
+	#(based on significant other and if they had them in the last few exchanges)
+	#this way we only do this step once
+	exclude_years=get_exclusion_years(None,new_year,num_previous_exclude,cur)
+	
+	#change the row_factory to allow for working with results
+	#like dictionaries, make sure to make a new cursor
+	con.row_factory=sqlite3.Row
+	cur=con.cursor()
 
-		#now, we need to get the family member information
-		query='SELECT * FROM family WHERE name in ('
-		for _ in range(len(names)-1):
-			query+='?,'
-		query+='?)'
-		rows=cur.execute(query,tuple(names)).fetchall()
-		
-		#now let's build a members dictionary
-		member_info={}
-		for row in rows:
-			if row is not None:
-				member_info[row['name']]={'email':row['email'],'id':row['id'],
-			'address_id':row['address_id']}
-		
-		#now add in the exclude info
-		query='SELECT f.name, s.so_id'
-		if exclude_years:
+	#now, we need to get the family member information
+	query='SELECT * FROM family WHERE name in ('
+	for _ in range(len(names)-1):
+		query+='?,'
+	query+='?)'
+	rows=cur.execute(query,tuple(names)).fetchall()
+	
+	#now let's build a members dictionary
+	member_info={}
+	for row in rows:
+		if row is not None:
+			member_info[row['name']]={'email':row['email'],'id':row['id'],
+		'address_id':row['address_id']}
+	
+	#now add in the exclude info
+	query='SELECT f.name, s.so_id'
+	if exclude_years:
+		for year in exclude_years:
+			query+=f', e.{year}'
+	query+=' FROM family as f JOIN significant_other as s ON f.id=s.id'
+	if exclude_years:
+		query+=' JOIN exchange as e ON e.id=f.id'
+	query+=' WHERE name IS IN ('
+	for _ in range(len(names)-1):
+		query+='?,'
+	query+='?)'
+	rows=cur.execute(query,tuple(names)).fetchall()
+	for row in rows:
+		if row is not None:
+			#by default, will exclude yourself
+			member_info[row['name']]['excludes']=[row['name']]
+			#if you have a significant other, add them to the exclude
+			if row['s.so_id'] is not None:
+				member_info[row['name']]['excludes'].append(row['s.so_id'])
+			#now, if exclude_years isn't empty,
+			#add your recent giftees to your current exclude list
 			for year in exclude_years:
-				query+=f', e.{year}'
-		query+=' FROM family as f JOIN significant_other as s ON f.id=s.id'
-		if exclude_years:
-			query+=' JOIN exchange as e ON e.id=f.id'
-		query+=' WHERE name IS IN ('
-		for _ in range(len(names)-1):
-			query+='?,'
-		query+='?)'
-		rows=cur.execute(query,tuple(names)).fetchall()
-		for row in rows:
-			if row is not None:
-				#by default, will exclude yourself
-				member_info[row['name']]['excludes']=[row['name']]
-				#if you have a significant other, add them to the exclude
-				if row['s.so_id'] is not None:
-					member_info[row['name']]['excludes'].append(row['s.so_id'])
-				#now, if exclude_years isn't empty,
-				#add your recent giftees to your current exclude list
-				for year in exclude_years:
-					member_info[row['name']]['excludes'].append(row[f'e.{year}'])
-		
-		#before we proceed to making the draws, let's check that the excludes
-		#haven't resulted in a situation where someone has no valid options
-		BAIL=False
-		for name in names:
-			if len(member_info[name]['excludes'])>=len(names):
-				#two possibilities, some duplicates or num_previous_excludes too large
-				if len(member_info[name]['excludes'])==len(names):
-					print(f'ERROR:exclude list for {name} excludes all family members.')
+				member_info[row['name']]['excludes'].append(row[f'e.{year}'])
+	
+	#before we proceed to making the draws, let's check that the excludes
+	#haven't resulted in a situation where someone has no valid options
+	BAIL=False
+	for name in names:
+		if len(member_info[name]['excludes'])>=len(names):
+			#two possibilities, some duplicates or num_previous_excludes too large
+			if len(member_info[name]['excludes'])==len(names):
+				print(f'ERROR:exclude list for {name} excludes all family members.')
+				print('Consider excluding fewer previous year giftees.')
+				BAIL=True
+			
+			if max([member_info[name]['excludes'].count(exclude)\
+			 for exclude in member_info['name']['excludes']])>1:
+				#have a duplicate
+				new_excludes=member_info[name]['excludes'][0]
+				for exclude in member_info[name]['excludes'][1:]:
+					if exclude not in new_excludes:
+						new_excludes.append(exclude)
+				if len(new_excludes)==len(names):
+					print(f'ERROR: exclude list for {name} excludes\
+					 all family members, even after removing duplicates.')
+					 
 					print('Consider excluding fewer previous year giftees.')
 					BAIL=True
-				
-				if max([member_info[name]['excludes'].count(exclude)\
-				 for exclude in member_info['name']['excludes']])>1:
-					#have a duplicate
-					new_excludes=member_info[name]['excludes'][0]
-					for exclude in member_info[name]['excludes'][1:]:
-						if exclude not in new_excludes:
-							new_excludes.append(exclude)
-					if len(new_excludes)==len(names):
-						print(f'ERROR: exclude list for {name} excludes\
-						 all family members, even after removing duplicates.')
-						 
-						print('Consider excluding fewer previous year giftees.')
-						BAIL=True
-					else:
-						member_info[name]['excludes']=new_excludes
-		if BAIL:
-			print('Will not generate new gift exchange assignments, see output messages.')
-			return False
-		
-		#now we need to actually do the random draws
-		#taking into account the exclusion info
-		exchange_draws=get_draws(member_info)
-		
-		#if we get a None-type object returned, something went wrong
-		if exchange_draws is None:
-			print('Was unable to produce gift exchange draws\
-			 satisfying all exclusion requirements.')
-			 
-			print('Please check output messages, database tables,\
-			 and choice of number of previous giftees to exclude and try again.')
-			 
-			return False
-		
-		#now we need to add the giftee assignments to the exchange table in the
-		#column for the new year
-		query=f'''UPDATE exchange
-		SET Year_{new_year}=?
-		WHERE id=?'''
-		
-		for name in names:
-			cur.execute(query,
-			(member_info[exchange_draws[name]]['id'],member_info[name]['id']))
-		
-		#commit the change, print a success statement, and return
-		con.commit()
+				else:
+					member_info[name]['excludes']=new_excludes
+	if BAIL:
+		print('Will not generate new gift exchange assignments, see output messages.')
+		return False
+	
+	#now we need to actually do the random draws
+	#taking into account the exclusion info
+	exchange_draws=get_draws(member_info)
+	
+	#if we get a None-type object returned, something went wrong
+	if exchange_draws is None:
+		print('Was unable to produce gift exchange draws\
+		 satisfying all exclusion requirements.')
+		 
+		print('Please check output messages, database tables,\
+		 and choice of number of previous giftees to exclude and try again.')
+		 
+		return False
+	
+	#now we need to add the giftee assignments to the exchange table in the
+	#column for the new year
+	query=f'''UPDATE exchange
+	SET Year_{new_year}=?
+	WHERE id=?'''
+	
+	for name in names:
+		cur.execute(query,
+		(member_info[exchange_draws[name]]['id'],member_info[name]['id']))
+	
+	#commit the change, print a success statement, and return
+	con.commit()
+	con.close()
 	
 	print(f'Successfully generated gift exchange assignments for {new_year}')
 	return True
@@ -183,26 +184,28 @@ def output_giftee_assignments(database_file,year=None):
 			 should be the four-digit year, e.g., 2023.\nNot doing anything.')
 			return
 	
-	with sqlite3.connect(database_file) as con:
-		con.row_factory=sqlite3.Row
-		cur=con.cursor()
-		
-		rows=cur.execute(f'''SELECT id,Year_{year}
-		FROM exchange''').fetchall()
-		
-		if rows is None:
-			print(f'Uh oh! Gift exchange does not appear to have\
-			 been generated for {year}.\nWill not produce assignment files.')
-			return
-		
-		for row in rows:
-			if row[f'Year_{year}'] is not None:
-				produce_assignment_files(database_file,row['id'],
-				    row[f'Year_{year}'],year,cur)
-		
-		print(f'Gift exchange assignment files successfully generated for {year}')
-		print(f'Files can be found in\
-		{os.path.join(os.path.dirname(database_file),"Year_"+str(year))}.')
+	con=sqlite3.connect(database_file)
+	con.row_factory=sqlite3.Row
+	cur=con.cursor()
+	
+	rows=cur.execute(f'''SELECT id,Year_{year}
+	FROM exchange''').fetchall()
+	
+	if rows is None:
+		print(f'Uh oh! Gift exchange does not appear to have\
+		 been generated for {year}.\nWill not produce assignment files.')
+		return
+	
+	for row in rows:
+		if row[f'Year_{year}'] is not None:
+			produce_assignment_files(database_file,row['id'],
+			    row[f'Year_{year}'],year,cur)
+	
+	print(f'Gift exchange assignment files successfully generated for {year}')
+	print(f'Files can be found in\
+	{os.path.join(os.path.dirname(database_file),"Year_"+str(year))}.')
+	
+	con.close()
 		
 	return
 					
