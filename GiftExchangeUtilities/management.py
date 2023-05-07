@@ -306,7 +306,7 @@ def count_at_address(database_file,address_id,cur=None):
 def add_address(database_file,address,cur=None):
 	if not isinstance(cur,sqlite3.Cursor):
 		con=sqlite3.connect(database_file)
-		cur=con.cursor
+		cur=con.cursor()
 	else:
 		con=None
 	cur.execute('''INSERT INTO addresses

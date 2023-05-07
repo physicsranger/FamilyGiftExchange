@@ -36,19 +36,18 @@ def create_database(database_file,overwrite=False):
 	
 	#first, the family table
 	cur.execute('''CREATE TABLE family
-	(id INT UNSIGNED PRIMARY KEY,
+	(id INTEGER PRIMARY KEY AUTOINCREMENT,
 	name VARCHAR(64),
 	email VARCHAR(128),
-	address_id INT UNSIGNED,
-	constraint pk_family PRIMARY KEY (id),
+	address_id INTEGER,
 	constraint fk_address FOREIGN KEY (address_id) REFERENCES id (address))''')
 	
 	print('',end='...')
 	
 	#next, the significant_other table
 	cur.execute('''CREATE TABLE significant_other
-	(id INT UNSIGNED,
-	so_id INT UNSIGNED,
+	(id INTEGER,
+	so_id INTEGER,
 	constraint pk_significant_other PRIMARY KEY (id),
 	constraint fk_id FOREIGN KEY (id) REFERENCES id (family))''')
 	###initially had a constraint on the so_id column as well, but this value can
@@ -58,9 +57,8 @@ def create_database(database_file,overwrite=False):
 	
 	#next, the address table
 	cur.execute('''CREATE TABLE addresses
-	(id INT UNSIGNED PRIMARY KEY,
-	address TEXT,
-	constraint pk_address PRIMARY KEY (id))''')
+	(id INTEGER PRIMARY KEY AUTOINCREMENT,
+	address TEXT)''')
 	
 	print('',end='...')
 	
@@ -68,8 +66,8 @@ def create_database(database_file,overwrite=False):
 	#will start with just one year
 	current_year=f'Year_{time.localtime().tm_year}'
 	cur.execute(f'''CREATE TABLE exchange
-	(id INT UNSIGNED,
-	{current_year} INT UNSIGNED,
+	(id INTEGER,
+	{current_year} INTEGER,
 	constraint pk_exchange PRIMARY KEY (id),
 	constraint fk_id FOREIGN KEY (id) REFERENCES id (family))''')
 	
