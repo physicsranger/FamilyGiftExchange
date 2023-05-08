@@ -15,8 +15,7 @@ overwrite=False,new_year=None):
 		new_year=time.localtime().tm_year
 	else:
 		if not valid_year(str(new_year)):
-			print(f'Year {new_year} has an invalid format, should be\
-			 the four-digit year, e.g., 2023.\nNot doing anything.')
+			print(f'Year {new_year} has an invalid format, should be the four-digit year, e.g., 2023.\nNot doing anything.')
 			return
 	
 	con=sqlite3.connect(database_file)
@@ -26,17 +25,16 @@ overwrite=False,new_year=None):
 	add_new_year(None,new_year,cur)
 	
 	#now, we're going to check if info for this year exists
-	cur.execute('''SELECT COUNT(*)
+	cur.execute(f'''SELECT COUNT(*)
 	FROM exchange
-	WHERE ? IS NOT NULL''',(f'Year_{new_year}',))
-	if cur.execute.fetchone() is not None:
+	WHERE Year_{new_year} IS NOT NULL''')
+	
+	if cur.fetchone()[0]>0:
 		if overwrite:
-			print(f'Exchange info exists for {new_year}, overwrite flag\
-			 set to True, will generate new gift exchange assignments.')
+			print(f'Exchange info exists for {new_year}, overwrite flag set to True, will generate new gift exchange assignments.')
 			 
 		else:
-			print(f'Exchange info exists for {new_year}, overwrite flag\
-			 set to false, will not do anything.')
+			print(f'Exchange info exists for {new_year}, overwrite flag set to false, will not do anything.')
 			 
 			return False
 	#commit the changes
@@ -58,8 +56,7 @@ overwrite=False,new_year=None):
 	#make sure we have at least 2 names
 	if len(names)<2:
 		print(f'Whoops! We ended up with {len(names)} names.')
-		print('Make sure you have populated your family table and\
-		 that you did not accidentally skip too many family members.')
+		print('Make sure you have populated your family table and that you did not accidentally skip too many family members.')
 		print(f'Not generating gift exchange assignments for {new_year}')
 		return None
 	
@@ -67,7 +64,10 @@ overwrite=False,new_year=None):
 	#lists of members to exclude for each member
 	#(based on significant other and if they had them in the last few exchanges)
 	#this way we only do this step once
-	exclude_years=get_exclusion_years(None,new_year,num_previous_exclude,cur)
+	if num_previous_exclude>0:
+		exclude_years=get_exclusion_years(None,new_year,num_previous_exclude,cur)
+	else:
+		exclude_years=[]
 	
 	#change the row_factory to allow for working with results
 	#like dictionaries, make sure to make a new cursor
@@ -96,22 +96,29 @@ overwrite=False,new_year=None):
 	query+=' FROM family as f JOIN significant_other as s ON f.id=s.id'
 	if exclude_years:
 		query+=' JOIN exchange as e ON e.id=f.id'
-	query+=' WHERE name IS IN ('
+	query+=' WHERE name IN ('
 	for _ in range(len(names)-1):
 		query+='?,'
 	query+='?)'
+	
 	rows=cur.execute(query,tuple(names)).fetchall()
+	
+	for name in names:
+		member_info[name]['excludes']=[name]
+	
 	for row in rows:
 		if row is not None:
+			this_row=dict(row)
 			#by default, will exclude yourself
-			member_info[row['name']]['excludes']=[row['name']]
+			member_info[this_row['name']]['excludes']=[this_row['name']]
 			#if you have a significant other, add them to the exclude
-			if row['s.so_id'] is not None:
-				member_info[row['name']]['excludes'].append(row['s.so_id'])
+			if this_row.get('so_id') is not None:
+				member_info[this_row['name']]['excludes'].append(\
+				    get_member_name(None,this_row['so_id'],cur))
 			#now, if exclude_years isn't empty,
 			#add your recent giftees to your current exclude list
 			for year in exclude_years:
-				member_info[row['name']]['excludes'].append(row[f'e.{year}'])
+				member_info[this_row['name']]['excludes'].append(this_row[f'e.{year}'])
 	
 	#before we proceed to making the draws, let's check that the excludes
 	#haven't resulted in a situation where someone has no valid options
@@ -147,13 +154,12 @@ overwrite=False,new_year=None):
 	#taking into account the exclusion info
 	exchange_draws=get_draws(member_info)
 	
-	#if we get a None-type object returned, something went wrong
-	if exchange_draws is None:
-		print('Was unable to produce gift exchange draws\
-		 satisfying all exclusion requirements.')
+	#if we get a None-type object or an empty list is returned
+	#something went wrong
+	if exchange_draws is None or not exchange_draws:
+		print('Was unable to produce gift exchange draws satisfying all exclusion requirements.')
 		 
-		print('Please check output messages, database tables,\
-		 and choice of number of previous giftees to exclude and try again.')
+		print('Please check output messages, database tables, and choice of number of previous giftees to exclude and try again.')
 		 
 		return False
 	
@@ -163,9 +169,10 @@ overwrite=False,new_year=None):
 	SET Year_{new_year}=?
 	WHERE id=?'''
 	
-	for name in names:
-		cur.execute(query,
-		(member_info[exchange_draws[name]]['id'],member_info[name]['id']))
+	draws=[(member_info[exchange_draws[name]]['id'],member_info[name]['id'])\
+	    for name in names]
+	
+	cur.executemany(query,draws)
 	
 	#commit the change, print a success statement, and return
 	con.commit()
@@ -219,10 +226,12 @@ def get_draws(members):
 	#and allowing for getting unlucky and starting over
 			
 	#randomize the order of drawing
-	drawers=np.choice(list(members.keys()),size=len(members.keys()),replace=False)
+	drawers=np.random.choice(list(members.keys()),size=len(members.keys()),replace=False)
 	
 	#now let's do the draws
-	while (redo_draws:=True) and (counter:=0)<1000:
+	redo_draws=True
+	counter=0
+	while redo_draws and counter<1000:
 			available_names=list(members.keys())
 			exchange_draws={}
 			for drawer in drawers:
@@ -238,7 +247,7 @@ def get_draws(members):
 				
 				#randomly pick someone from the available giftees
 				exchange_draws[drawer]=np.random.choice(giftees,size=1,
-				replace=False)
+				replace=False)[0]
 				
 				#update the list of available names for the next person to draw
 				available_names.remove(exchange_draws[drawer])
@@ -283,7 +292,7 @@ def produce_assignment_file(database_file,gifter_id,giftee_id,year,cur=None):
 	###in the input values?
 	rows=cur.execute('''SELECT name,address_id
 	FROM family
-	WHERE id IS IN (?,?)''',(gifter_id,giftee_id)).fetchall()
+	WHERE id IN (?,?)''',(gifter_id,giftee_id)).fetchall()
 	
 	gifter=rows[0]['name']
 	giftee=rows[1]['name']
@@ -317,7 +326,7 @@ def add_new_year(database_file,year,cur=None):
 		
 	if not isinstance(cur,sqlite3.Cursor):
 		con=sqlite3.connect(database_file)
-		cur=sqlite3.cursor()
+		cur=con.cursor()
 	else:
 		con=None
 	
@@ -371,7 +380,7 @@ def get_excludes(database_file,member_id,years,cur=None):
 #this way we only do it once
 def get_exclusion_years(database_file,this_year,num_exclude,cur=None):
 	#check the input year
-	if not valid_year(string(this_year)):
+	if not valid_year(str(this_year)):
 		raise ValueError(f'{this_year} is not a valid 4 digit year')
 	
 	#if we didn't pass in a valid cursor, connect to the database
@@ -384,14 +393,16 @@ def get_exclusion_years(database_file,this_year,num_exclude,cur=None):
 	#now, check the previous years, may need to account for non-consecutive years
 	years=[descr[0] for descr in cur.execute('SELECT * FROM exchange').description if descr[0]!='id']
 	years=[[year,this_year-int(year.split('_')[1])] for year in years].sort(reverse=True)
-	if len(years)<num_exclude:
-		print(f'Requested to exclude possible giftees for each family member from\
-		{num_exclude} previous years, but there are only {len(years)} years in the\
-		exchange.')
-		print('We will only exclude giftees for each family member using {len(years)}\
-		years.')
-		num_exclude=len(years)
-	years_to_exclude=[year[0] for year in years[:num_exclude]]
+	
+	if years is None:
+		print(f'No previous years to exclude')
+		years_to_exclude=[]
+	else:
+		if len(years)<num_exclude:
+			print(f'Requested to exclude possible giftees for each family member from\ {num_exclude} previous years, but there are only {len(years)} years in the exchange.')
+			print('We will only exclude giftees for each family member using {len(years)} years.')
+			num_exclude=len(years)
+		years_to_exclude=[year[0] for year in years[:num_exclude]]
 	
 	if con is not None:
 		con.close()
@@ -409,6 +420,24 @@ def valid_year(year_string):
 		return True
 	except ValueError:
 		return False
+
+def get_member_name(database_file,member_id,cur=None):
+	if not isinstance(cur,sqlite3.Cursor):
+		con=sqlite3.connect(database_file)
+		cur=con.cursor()
+	else:
+		con=None
+	
+	row=cur.execute('''SELECT name
+	FROM family
+	WHERE id=?''',(member_id,)).fetchone()
+	
+	name=(None if row is None else row[0])
+	
+	if con is not None:
+		con.close()
+	
+	return name
 
 #################################################################################
 ##functions to query the exchange table to view previous and current name draws
