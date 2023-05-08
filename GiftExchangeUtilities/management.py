@@ -60,6 +60,21 @@ def add_or_update_family_member(database_file,member):
 				update_address(database_file,address_id,address)		
 		member['family']['address_id']=address_id
 	
+	#if the address is not in the keys, see if the 
+	#member is in the database already to get the address_id
+	#else, set to None
+	elif member_in_database(database_file,name):
+		con=sqlite3.connect(database_file)
+		cur=con.cursor()
+		address_id=cur.execute('''SELECT address_id
+		FROM family
+		WHERE name=?''',(name,)).fetchone()
+		member['family']['address_id']=(None if address_id is None\
+		    else address_id[0])
+		con.close()
+	else:
+		member['family']['address_id']=None
+	
 	#check if the email has been provided
 	if 'email' not in member['family'].keys():
 		member['family']['email']=get_email(database_file,name)
