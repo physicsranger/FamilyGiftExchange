@@ -23,9 +23,13 @@ def add_or_update_family_member(database_file,member):
 			#in the table
 			con=sqlite3.connect(database_file)
 			cur=con.cursor()
-			address_id=cur.execute('''SELECT address_id
-			FROM family
-			WHERE name=?''',(name,)).fetchone()[0]
+			if member_in_database(database_file,name):
+				address_id=cur.execute('''SELECT address_id
+				FROM family
+				WHERE name=?''',(name,)).fetchone()[0]
+			
+			else:
+				address_id=None
 			
 			#if the current_address is None, then they aren't in
 			#the database yet or had no address assigned
@@ -83,10 +87,8 @@ def add_or_update_family_member(database_file,member):
 				significant_other_id)
 		
 		else:
-			print(f'Significant other {significant_other} for {name}\
-			 is not in the database.')
-			print(f'Adding entry for {significant_other}, will need to update\
-			 email and address manually.')
+			print(f'Significant other {significant_other} for {name} is not in the database.')
+			print(f'Adding entry for {significant_other}, will need to update email and address manually.')
 			
 			so_member={'name':significant_other,'email':None,
 			'address_id':None}
@@ -109,7 +111,7 @@ def remove_family_member(database_file,name):
 	con=sqlite3.connect(database_file)
     #use sqlite3.Row so that we can get all the info about
     #the member as an easy to work with dictionary
-	con.row_factor=sqlite3.Row
+	con.row_factory=sqlite3.Row
 	cur=con.cursor()
 	member=cur.execute('''SELECT *
 	FROM family
@@ -122,18 +124,15 @@ def remove_family_member(database_file,name):
 	#if this family member is the only one at the address in the
 	#addresses table, remove that from the table
 	if count_at_address(None,member['address_id'],cur)<1:
-		cur.execute('''DELETE *
-		FROM addresses
+		cur.execute('''DELETE FROM addresses
 		WHERE id=?''',(member['address_id'],))
 	
 	#now remove the member from the significant_other and family tables
 	#(need to think about it, but I believe that is the correct order)
-	cur.execute('''DELETE *
-	FROM significant_other
+	cur.execute('''DELETE FROM significant_other
 	WHERE id=?''',(member['id'],))
 	
-	cur.execute('''DELETE *
-	FROM family
+	cur.execute('''DELETE FROM family
 	WHERE id=?''',(member['id'],))
 	
 	#and update the info for whoever might have had this
@@ -160,7 +159,7 @@ def add_family_member(database_file,member,cur=None):
 		con=None
 	
 	#first, we add the new family member to the family table
-	#omitting the 'id' column so it will be automatically autoincremented
+	#omitting the 'id' column so it will be automatically auto incremented
 	cur.execute('''INSERT INTO family
 	(name,email,address_id)
 	VALUES (?,?,?)''',(member['name'],member['email'],member['address_id']))
@@ -189,6 +188,37 @@ def update_family_member(database_file,member,cur=None):
 	SET email=?,
 	address_id=?
 	WHERE name=?''',(member['email'],member['address_id'],member['name']))
+	
+	if con is not None:
+		con.commit()
+		con.close()
+	return
+
+def add_significant_other(database_file,member_id,so_id,cur=None):
+	if not isinstance(cur,sqlite3.Cursor):
+		con=sqlite3.connect(database_file)
+		cur=con.cursor()
+	else:
+		con=None
+	
+	cur.execute('''INSERT INTO significant_other
+	(id,so_id) VALUES (?,?)''',(member_id,so_id))
+	
+	if con is not None:
+		con.commit()
+		con.close()
+	return
+
+def update_significant_other(database_file,member_id,significant_other_id,cur=None):
+	if not isinstance(cur,sqlite3.Cursor):
+		con=sqlite3.connect(database_file)
+		cur=con.cursor()
+	else:
+		con=None
+	
+	cur.execute('''UPDATE significant_other
+	SET so_id=?
+	WHERE id=?''',(significant_other_id,member_id))
 	
 	if con is not None:
 		con.commit()
@@ -256,21 +286,6 @@ def get_significant_other_id(database_file,name,cur=None):
 	significant_other_id=(significant_other_id if significant_other_id is None else significant_other_id[0])
 	return significant_other_id
 
-def update_significant_other(database_file,member_id,significant_other_id,cur=None):
-	if not isinstance(cur,sqlite3.Cursor):
-		con=sqlite3.connect(database_file)
-		cur=con.cursor()
-	else:
-		con=None
-	
-	cur.execute('''UPDATE significant_other
-	SET so_id=?
-	WHERE id=?''',(significant_other_id,member_id))
-	
-	if con is not None:
-		con.commit()
-		con.close()
-	return
 
 #function to get the id from the addresses table for a given address
 #if the address is not in the table, it will return a None type
@@ -372,6 +387,8 @@ def query_member(database_file,name,cur=None):
 				row={'so_id':row[0],
 				'email':row[1],
 				'address':row[2]}
+			else:
+				row=dict(row)
 			
 			if row['so_id'] is not None:
 				row['significant_other']=cur.execute('''SELECT name
