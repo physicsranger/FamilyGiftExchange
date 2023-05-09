@@ -39,9 +39,9 @@ class MainApp:
 			 
 				self.app_directory=os.path.dirname(self.app_directory)
 				
-		if self.app_directory==os.sep:
-			#couldn't figure out the install dir, use current dir
-			self.app_directory=os.getcwd()
+			if self.app_directory==os.sep:
+				#couldn't figure out the install dir, use current dir
+				self.app_directory=os.getcwd()
 			
 		elif __file__:
 			self.app_directory=os.path.dirname(__file__)
@@ -85,22 +85,18 @@ class MainApp:
 		    text='Gift Exchange')
 
 	def pack_all(self):
+		#place the notebook and the tabs
 		self.notebook.pack(side='top',expand=True,fill='both')
 		
 		self.family_tab.pack_all()
 		
-		self.exhange_tab.pack_all()
+		self.exchange_tab.pack_all()
 		
 		#place the terminal window
 		self.terminal.pack(side='bottom',fill='both',expand=True)
 		
 		self.text_y_scroll.pack(side='left',fill='y',expand=True)
 		self.text_x_scroll.pack(side='bottom',fill='x',expand=True)
-		
-		#self.terminal.grid(column=0,row=1,sticky='NESW')
-		
-		#self.text_y_scroll.grid(column=1,row=2,sticky='NES')
-		#self.text_x_scroll.grid(column=0,row=3,columnspan=2,sticky='EW')
 
 
 
