@@ -48,6 +48,14 @@ class MainApp:
 		else:
 			self.app_directory=os.getcwd()
 		
+		self.off_style=ttk.Style()
+		self.off_style.configure('Off.TButton',background='darkgray',foreground='gray',
+		    font=('Times New Roman',8))
+		
+		self.on_style=ttk.Style()
+		self.on_style.configure('On.TButton',background='gray',foreground='white',
+		    font=('Times New Roman',12,'bold'))
+		
 		self.notebook=ttk.Notebook(self.master)
 		
 		self.make_tabs()
@@ -82,7 +90,7 @@ class MainApp:
 		    text='Manage Your Family')
 		
 		self.exchange_tab=ExchangeTab(self.notebook,self,self.master,
-		    text='Gift Exchange')
+		    text='Manage Name Draws')
 
 	def pack_all(self):
 		#place the notebook and the tabs

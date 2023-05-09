@@ -41,7 +41,7 @@ class FamilyTab(ttk.Frame):
 		#first off, button to create an empty database with
 		#all the tables we'll want to fill in later
 		self.create_button=ttk.Button(parent,text='Create Family',
-		    command=self.create_family)
+		    command=self.create_family,state='disabled',style='Off.TButton')
 		
 		self.family=tki.StringVar()
 		self.family_label=ttk.Label(parent,text='Choose Family')
@@ -138,10 +138,10 @@ class FamilyTab(ttk.Frame):
 	
 	def fill_seventh_family_row(self,parent):
 		self.add_or_update_member_button=ttk.Button(parent,text='Add/Update Member Info',
-		    command=self.add_or_update_member,state='disabled')
+		    command=self.add_or_update_member,state='disabled',style='Off.TButton')
 		
 		self.remove_member_button=ttk.Button(parent,text='Remove Member',
-		    command=self.remove_member,state='disabled')
+		    command=self.remove_member,state='disabled',style='Off.TButton')
 		
 		self.quit_button=ttk.Button(parent,text='Quit',command=self.quit)
 	
@@ -261,7 +261,7 @@ class FamilyTab(ttk.Frame):
 			#the trace on the family variable should mean we automatically
 			#make this when we update the value, but we'll check just in case
 			if not hasattr(self,'database_directory'):
-				self.database_directory=os.path.join(self.app.app_dir,
+				self.database_directory=os.path.join(self.app.app_directory,
 				    'GiftExchange_data',f'data_family_{self.family.get()}')
 				
 				self.database_file=os.path.join(self.database_directory,
@@ -308,10 +308,11 @@ class FamilyTab(ttk.Frame):
 		
 		#def an ad hoc function to enable choice button
 		def check_family(*args):
-			if family_choice.get()=='':
-				choice_button['state']='disabeled'
-			else:
-				choice_button['state']='normal'
+			choice_state=('disabled' if family_choice.get()=='' else 'normal')
+			choice_style=('Off.TButton' if choice_state=='disabled' else 'On.TButton')
+			
+			choice_button['state']=choice_state
+			choice_button['style']=choice_style
 		
 		families=self.get_available_families()
 		
@@ -328,7 +329,7 @@ class FamilyTab(ttk.Frame):
 		new_label.grid(column=0,row=1+len(families))
 		
 		choice_button=ttk.Button(window_frame,text='Choose Family',
-		command=assign_and_quit,state='disabeled')
+		command=assign_and_quit,state='disabeled',style='Off.TButton')
 		
 		choice_button.grid(column=0,row=2+len(families),columnspan=2)
 		
@@ -380,9 +381,9 @@ class FamilyTab(ttk.Frame):
 	#the combo boxes
 	def list_family(self,*args):
 		if self.family!='':
-			self.database_directory=os.path.join(self.app.app_dir,
+			self.database_directory=os.path.join(self.app.app_directory,
 			    'GiftExchange_data',f'data_family_{self.family.get()}')
-			self.database_file.os.path.join(self.database_directory,'GiftExchange.db')
+			self.database_file=os.path.join(self.database_directory,'GiftExchange.db')
 		
 			if os.path.exists(self.database_file):
 				with sqlite3.connect(dbfile) as con:
@@ -423,16 +424,21 @@ class FamilyTab(ttk.Frame):
 	def check_family_buttons(self,*args):
 		#if both the family and family_member values are set, the buttons can be
 		#active
-		if (self.family not in [None,'NULL','']) and\
-		 (self.family_member not in [None,'NULL','']):
+		create_state=('normal' if self.family.get() not in [None,'NULL','']\
+		    else 'disabled')
+		create_style=('On.TButton' if create_state=='normal' else 'Off.TButton')
+		self.create_button['state']=create_state
+		self.create_button['style']=create_style
 		
-			self.add_or_update_member_button['state']='normal'
-			self.remove_member_buton['state']='normal'
+		member_state=('normal' if (self.family.get() not in [None,'NULL','']) and \
+		    (self.family_member.get() not in [None,'NULL','']) else 'disabled')
+		member_style=('On.TButton' if member_state=='normal' else 'Off.TButton')
+		 
+		self.add_or_update_member_button['state']=member_state
+		self.remove_member_button['state']=member_state
 		
-		#otherwise, disable the buttons
-		else:
-			self.add_or_update_member_button['state']='disabled'
-			self.remove_member_buton['state']='disabled'
+		self.add_or_update_member_button['style']=member_style
+		self.remove_member_button['style']=member_style
 	
 	#function for quit button, I think using the 'after' method will avoid
 	#the GUI hanging up as I'm seeing on my mac

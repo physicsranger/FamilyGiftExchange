@@ -50,8 +50,7 @@ class ExchangeTab(ttk.Frame):
 		#button to draw names, start out disabled by default, put a trace
 		#on the family variable (can we have multiple traces at once?)
 		self.draw_names_button=ttk.Button(parent,text='Draw Names',
-		    command=self.draw_names,state='disabled',
-		    width=10)
+		    command=self.draw_names,state='disabled',style='Off.TButton')
 		    
 		#we expect that this should be called after the family frame
 		#so we can make it point to the same family variable
@@ -88,11 +87,14 @@ class ExchangeTab(ttk.Frame):
 		    	
 		self.skip_members=[]
 		self.skip_members_button=ttk.Button(parent,
-		    text='Choose members to skip',command=self.choose_members_to_skip)	
+		    text='Choose members to skip',command=self.choose_members_to_skip,
+		    state='disabled',style='Off.TButton')	
 	
 	def fill_third_row(self,parent):
 		self.view_previous_years_button=ttk.Button(parent,
-		    text='View Previous Years',command=self.view_previous)
+		    text='View Previous Years',command=self.view_previous,state='disabled',
+		    style='Off.TButton')
+		    
 		self.num_previous=tki.IntVar(value=1)
 		self.num_previous_label=ttk.Label(parent,text='Number of years to view')
 		self.num_previous_entry=ttk.Entry(parent,
@@ -105,7 +107,8 @@ class ExchangeTab(ttk.Frame):
 	
 	def fill_fourth_row(self,parent):
 		self.input_previous_year_button=ttk.Button(parent,
-		   text='Input Data For Previous Year',command=self.input_previous)
+		   text='Input Data For Previous Year',command=self.input_previous,
+		   state='disabled',style='Off.TButton')
 	
 	def fill_fifth_row(self,parent):
 		self.quit_button=ttk.Button(parent,text='Quit',command=self.quit)
@@ -136,7 +139,7 @@ class ExchangeTab(ttk.Frame):
 		self.skip_members_button.pack(side='left')
 	
 	def pack_third_row(self):
-		self.third_row.pack(side='top',fill='x')
+		self.third_row.pack(side='top',fill='x',pady=(8,8))
 		self.view_previous_years_button.pack(side='left')
 		self.num_previous_label.pack(side='left',padx=(8,0))
 		self.num_previous_entry.pack(side='left',padx=(0,8))
@@ -144,11 +147,11 @@ class ExchangeTab(ttk.Frame):
 		self.include_current_check.pack(side='left')
 	
 	def pack_fourth_row(self):
-		self.fourth_row.pack(side='top',fill='x')
+		self.fourth_row.pack(side='top',fill='x',pady=(8,8))
 		self.input_previous_year_button.pack(side='left')
 	
 	def pack_fifth_row(self):
-		self.fifth_row.pack(side='top',fill='x')
+		self.fifth_row.pack(side='top',fill='x',pady=(8,8))
 		self.quit_button.pack(side='left')
 	
 	
@@ -160,7 +163,7 @@ class ExchangeTab(ttk.Frame):
 	
 	#add traces on variables associated with the exchange_frame
 	def add_exchange_traces(self,*args):
-		self.family.trace_add('write',self.check_draw_button)
+		self.family.trace_add('write',self.check_exchange_buttons)
 	
 	#function to do the name draw
 	def draw_names(self,*args):
@@ -297,7 +300,10 @@ class ExchangeTab(ttk.Frame):
 						break
 			else:
 				state='disabled'
+			
+			style=('On.TButton' if state=='normal' else 'Off.TButton')
 			add_to_exchange_button['state']=state
+			add_to_exchange_button['style']=style
 		
 		#first, get the names
 		names=self.app.family_tab.family_box['values']
@@ -319,7 +325,8 @@ class ExchangeTab(ttk.Frame):
 			    textvariable=variable,width=12) for variable in name_variables]
 			
 			add_to_exchange_button=ttk.Button(previous_year_frame,
-			    text='Add To Exchange',command=add_to_exchange,state='disabled')
+			    text='Add To Exchange',command=add_to_exchange,state='disabled',
+			    style='Off.TButton')
 			
 			quit_button=ttk.Button(previous_year_frame,
 			    command=previous_year_window.destroy)
@@ -351,13 +358,24 @@ class ExchangeTab(ttk.Frame):
 			 nothing to do.')
 
 	
-	def check_draw_button(self,*args):
+	def check_exchange_buttons(self,*args):
 		#make sure that the selected family is valid before enabling
 		#the draw names button
-		button_state=('normal' if self.family in get_available_families\
+		button_state=('normal' if self.family.get() in self.get_available_families()\
 		    else 'disabled')
+		button_style=('On.TButton' if button_state=='normal' else 'Off.TButton')
+		
 		self.draw_names_button['state']=button_state
-		return
+		self.draw_names_button['style']=button_style
+		
+		self.skip_members_button['state']=button_state
+		self.skip_members_button['style']=button_style
+		
+		self.view_previous_years_button['state']=button_state
+		self.view_previous_years_button['style']=button_style
+		
+		self.input_previous_year_button['state']=button_state
+		self.input_previous_year_button['style']=button_style
 	
 	#function to list which families are available by investigating
 	def get_available_families(self,*args):
