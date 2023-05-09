@@ -186,7 +186,7 @@ def output_giftee_assignments(database_file,year=None):
 	if year is None:
 		year=time.localtime().tm_year
 	#otherwise, check the input year to make sure it is a valid format
-	elif not valid_year(str(new_year)):
+	elif not valid_year(str(year)):
 			print(f'Year {year} has an invalid format,\
 			 should be the four-digit year, e.g., 2023.\nNot doing anything.')
 			return
@@ -199,18 +199,15 @@ def output_giftee_assignments(database_file,year=None):
 	FROM exchange''').fetchall()
 	
 	if rows is None:
-		print(f'Uh oh! Gift exchange does not appear to have\
-		 been generated for {year}.\nWill not produce assignment files.')
+		print(f'Uh oh! Gift exchange does not appear to have been generated for {year}.\nWill not produce assignment files.')
 		return
 	
 	for row in rows:
 		if row[f'Year_{year}'] is not None:
-			produce_assignment_files(database_file,row['id'],
-			    row[f'Year_{year}'],year,cur)
+			produce_assignment_file(database_file,row['id'],row[f'Year_{year}'],year,cur)
 	
 	print(f'Gift exchange assignment files successfully generated for {year}')
-	print(f'Files can be found in\
-	{os.path.join(os.path.dirname(database_file),"Year_"+str(year))}.')
+	print(f'Files can be found in {os.path.join(os.path.dirname(database_file),"Year_"+str(year))}.')
 	
 	con.close()
 		
@@ -276,46 +273,57 @@ def get_draws(members):
 def produce_assignment_file(database_file,gifter_id,giftee_id,year,cur=None):
 	if not isinstance(cur,sqlite3.Cursor):
 		con=sqlite3.connect(database_file)
-		con.row_factor=sqlite3.Row
+		con.row_factory=sqlite3.Row
 		cur=con.cursor()
 	else:
 		con=None
 	
 	#get the directory
 	gift_exchange_dir=os.path.join(os.path.dirname(database_file),str(year))
-	if not os.path.exists(gift_exchange):
-		os.mkdir(gift_exchange)
+	if not os.path.exists(gift_exchange_dir):
+		os.mkdir(gift_exchange_dir)
 	
 	#look up the names and the giftee address info
-	###I need to experiment with this, can I always be sure
-	###that the gifter will be first, simply because they were listed first
-	###in the input values?
-	rows=cur.execute('''SELECT name,address_id
+	#do this one at a time to catch instances where a gifter does not
+	#have an address_id but the giftee does, this inverts the order of returned
+	#rows...though I'm sure there is a way to fix this with
+	#a statement in the query, but I'll need to look that up
+	row=cur.execute('''SELECT name
 	FROM family
-	WHERE id IN (?,?)''',(gifter_id,giftee_id)).fetchall()
+	WHERE id=?''',(gifter_id,)).fetchall()
+	gifter=row[0]['name']
 	
-	gifter=rows[0]['name']
-	giftee=rows[1]['name']
-	giftee_address_id=rows[1]['address_id']
+	row=cur.execute('''SELECT name,address_id
+	FROM family
+	WHERE id=?''',(giftee_id,)).fetchall()
+	giftee=row[0]['name']
+	giftee_address_id=row[0]['address_id']
 	
 	assignment_file_name=f'{gifter}_{year}.txt'
-	
+		
 	if giftee_address_id is not None:
-		giftee_address=cur.execute('''SELECT address
+		giftee_address=parse_address(cur.execute('''SELECT address
 		FROM addresses
-		WHERE id=?''',(giftee_address_id,)).fetchone()[0]['address']
+		WHERE id=?''',(giftee_address_id,)).fetchone()['address'])
+		#giftee_address=parse_address(giftee_address)
 	
 	else:
-		giftee_address="No address indicated in database.\nConsult family\
-		 member in charge of the exchange."
+		giftee_address="No address indicated in database.\nConsult family member in charge of the exchange."
 	
 	with open(os.path.join(gift_exchange_dir,assignment_file_name),'w') as assign_file:
-		assign_file.write(f'{gifter} has {giftee}\nUse address:\n{giftee_address}')
+		assign_file.write(f'{gifter} has {giftee}\n\nUse address:\n{giftee_address}')
 	
 	if con is not None:
 		con.close()
 	
 	return
+
+def parse_address(address):
+	elements=address.split('\n')
+	address='\n'.join(elements[:3])
+	address+=reduce(lambda s1,s2:s1+', '+s2,elements[3:])
+	return address.replace('\n\n','\n')
+	
 
 #function to add a new year column to the exchange table
 def add_new_year(database_file,year,cur=None):
@@ -399,7 +407,7 @@ def get_exclusion_years(database_file,this_year,num_exclude,cur=None):
 		years_to_exclude=[]
 	else:
 		if len(years)<num_exclude:
-			print(f'Requested to exclude possible giftees for each family member from\ {num_exclude} previous years, but there are only {len(years)} years in the exchange.')
+			print(f'Requested to exclude possible giftees for each family member from {num_exclude} previous years, but there are only {len(years)} years in the exchange.')
 			print('We will only exclude giftees for each family member using {len(years)} years.')
 			num_exclude=len(years)
 		years_to_exclude=[year[0] for year in years[:num_exclude]]
