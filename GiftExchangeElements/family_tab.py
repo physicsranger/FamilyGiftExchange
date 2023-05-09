@@ -200,14 +200,14 @@ class FamilyTab(ttk.Frame):
 	def pack_third_family_row(self):
 		self.third_family_row.pack(side='top',fill='x')
 		
-		self.address_line_1_label.pack(side='left'_)
+		self.address_line_1_label.pack(side='left')
 		self.address_line_1_entry.pack(side='left',fill='x',expand=True,padx=(0,8))
 		
 	def pack_fourth_family_row(self):
 		self.fourth_family_row.pack(side='top',fill='x')
 		
 		self.address_line_2_label.pack(side='left')
-		self.address_line_2_entry.grid(column=1,row=3,columnspan=4,sticky='W')
+		self.address_line_2_entry.pack(side='left',fill='x',expand=True,padx=(0,8))
 	
 	def pack_fifth_family_row(self):
 		self.fifth_family_row.pack(side='top',fill='x')
@@ -216,7 +216,7 @@ class FamilyTab(ttk.Frame):
 		self.city_entry.pack(side='left',padx=(0,8))
 		
 		self.state_label.pack(side='left')
-		self.state_entry.pack(side='left',padx(0,8))
+		self.state_entry.pack(side='left',padx=(0,8))
 		
 		self.zip_code_label.pack(side='left')
 		self.zip_code_entry.pack(side='left')
