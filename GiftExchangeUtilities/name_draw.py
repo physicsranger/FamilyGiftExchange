@@ -485,9 +485,9 @@ def get_previous_years(database_file,number_to_view=1,include_latest=False,cur=N
 	years.sort()
 	
 	#build the query, we want the id column and the column for each year
-	query='SELECT id'
+	query='SELECT id, '
 	query+=reduce(lambda s1,s2:f'{s1}, Year_{s2}',years)
-	qury+=' FROM exchange'
+	query+=' FROM exchange'
 	
 	#this should give me tuples with id,year_0,year_1,..
 	exchange_rows=cur.execute(query).fetchall()
@@ -540,8 +540,10 @@ def add_previous_year(database_file,year,draws,cur=None):
 		
 		#now fill the database
 		query=f'UPDATE exchange SET Year_{year}=? WHERE id=?'
+		
+		#use the id_lookup to fill in the exchange by id
 		for name in draws.keys():
-			cur.execute(query,(name,draws[name]))
+			cur.execute(query,(id_lookup[name],id_lookup[draws[name]]))
 		
 		if con is not None:
 			con.commit()
