@@ -1,7 +1,7 @@
 import tkinter as tki
 from tkinter import ttk
 
-import os,sqlite3,glob
+import os,sqlite3,glob,re
 from functools import reduce
 
 from GiftExchangeUtilities.create import create_database
@@ -247,97 +247,51 @@ class FamilyTab(ttk.Frame):
 	def add_family_traces(self):
 		self.family_member.trace_add('write',self.get_member_info)
 
-
 ####class utility functions
 	def create_family(self,*args):
 		#create the empty database file
-		if self.family=='':
-			self.prompt_for_family()
+		print(f'Creating database for {self.family.get()}, any whitespaces will be replaced with underscores.')
+		#at this point, replace white spaces with underscores
+		for token in re.findall('[\s]+',self.family.get()):
+			self.family.set(self.family.get().replace(token,'_'))
 		
-		if self.family=='':
-			print('No family choice made, will not create database.')
-			return
-		else:
-			#the trace on the family variable should mean we automatically
-			#make this when we update the value, but we'll check just in case
-			if not hasattr(self,'database_directory'):
-				self.database_directory=os.path.join(self.app.app_directory,
-				    'GiftExchange_data',f'data_family_{self.family.get()}')
-				
-				self.database_file=os.path.join(self.database_directory,
-				    "GiftExchange.db")
+		#to pretty things up in the case of multiple spaces or tabs in sequence
+		#we'll reduce things down to at most one subsequent underscore
+		while '__' in self.family.get():
+			self.family.set(self.family.get().replace('__','_'))
+		
+		#the trace on the family variable should mean we automatically
+		#make this when we update the value, but we'll check just in case
+		if not hasattr(self,'database_directory'):
+			self.database_directory=os.path.join(self.app.app_directory,
+			    'GiftExchange_data',f'data_family_{self.family.get()}')
 			
-			#check to make sure that the GiftExchange_data directory exists
-			#since this is in the .gitignore file
-			#try and make it if not
-			if not os.path.exists(os.path.dirname(self.database_directory)):
-				try:
-					os.mkdir(os.path.dirname(self.database_directory))
-				except:
-					print(f'Directory for family data does not exist, but could not make directory:\n{os.path.dirname(self.database_directory)}\nCannot create database.')
-					return
-			
-			#check to see if the directory for this specific family exists
-			#if not, try and make it
-			if not os.path.exists(self.database_directory):
-				try:
-					os.mkdir(self.database_directory)
-				except:
-					print(f'Data directory for family {self.family.get()} does not exist, but could not make directory:\n{self.database_directory.get()}.\nCannot create database.')
-					return
-			
-			#may add a try except statement here later, but for now
-			#we'll want to capture any potential output
-			create_database(self.database_file,self.overwrite.get())
-		return
-	
-	#function to get family name if not specified
-	def prompt_for_family(self,*args):
-		prompt_window=tki.Toplevel(self.master)
-		window_frame=ttk.Frame(prompt_window,borderwidth=2,relief='raised')
-		main_label=ttk.Label(window_frame,text='Choose Family To Create Database For')
-		family_choice=ttk.StringVar()
+		self.database_file=os.path.join(self.database_directory,
+		    "GiftExchange.db")
 		
-		window_frame.grid(column=0,row=0)
-		main_label.grid(column=0,row=0,columnspan=2)
+		#check to make sure that the GiftExchange_data directory exists
+		#since this is in the .gitignore file
+		#try and make it if not
+		if not os.path.exists(os.path.dirname(self.database_directory)):
+			try:
+				os.mkdir(os.path.dirname(self.database_directory))
+			except:
+				print(f'Directory for family data does not exist, but could not make directory:\n{os.path.dirname(self.database_directory)}\nCannot create database.')
+				return
 		
-		#def an ad hoc function for a button in the new window
-		def assign_and_quit(*args):
-			self.family.set(family_choice.get())
-			prompt_window.destroy()
+		#check to see if the directory for this specific family exists
+		#if not, try and make it
+		if not os.path.exists(self.database_directory):
+			try:
+				os.mkdir(self.database_directory)
+			except:
+				print(f'Data directory for family {self.family.get()} does not exist, but could not make directory:\n{self.database_directory.get()}.\nCannot create database.')
+				return
 		
-		#def an ad hoc function to enable choice button
-		def check_family(*args):
-			choice_state=('disabled' if family_choice.get()=='' else 'normal')
-			choice_style=('Off.TButton' if choice_state=='disabled' else 'On.TButton')
-			
-			choice_button['state']=choice_state
-			choice_button['style']=choice_style
+		#may add a try except statement here later, but for now
+		#we'll want to capture any potential output
+		create_database(self.database_file,self.overwrite.get())
 		
-		families=self.get_available_families()
-		
-		if families:
-			check_buttons=[ttk.Radiobutton(window_frame,text=family,
-			    variable=family_choice,value=family) for family in families]
-			for idx,check in enumerate(check_buttons):
-				check.grid(column=0,row=1+idx,columnspan=2,sticky='W')
-		
-		new_label=ttk.Label(window_frame,text='Add New Family')
-		new_entry=ttk.Entry(window_frame,textvariable=family_choice)
-		
-		new_label.grid(column=0,row=1+len(families))
-		new_label.grid(column=0,row=1+len(families))
-		
-		choice_button=ttk.Button(window_frame,text='Choose Family',
-		command=assign_and_quit,state='disabeled',style='Off.TButton')
-		
-		choice_button.grid(column=0,row=2+len(families),columnspan=2)
-		
-		family_choice.trace_add('write',check_family)	
-		
-		prompt_window.grab_set()
-		
-		return
 	
 	#function to list which families are available by investigating
 	def get_available_families(self,*args):
@@ -349,8 +303,9 @@ class FamilyTab(ttk.Frame):
 			if dir_list:
 				#we want to split on the underscore
 				#but allow for underscores in family names
-				families=[reduce(lambda s1,s2:s1+'_'+s2,dir_name.split('_')[2:])\
-				 for dir_name in dir_list]
+				families=[reduce(lambda s1,s2:s1+'_'+s2,\
+				    dir_name.split(os.sep)[-1].split('_')[2:])\
+				    for dir_name in dir_list]
 		
 		return families
 	
@@ -380,19 +335,22 @@ class FamilyTab(ttk.Frame):
 	#function to get the list of family member names from the data base and populate
 	#the combo boxes
 	def list_family(self,*args):
-		if self.family!='':
+		if self.family.get()!='':
 			self.database_directory=os.path.join(self.app.app_directory,
 			    'GiftExchange_data',f'data_family_{self.family.get()}')
 			self.database_file=os.path.join(self.database_directory,'GiftExchange.db')
 		
 			if os.path.exists(self.database_file):
-				with sqlite3.connect(dbfile) as con:
-					family=con.cursor().execute("SELECT name FROM family").fetchall()
-				
-				family=[f[0] for f in family]
+				con=sqlite3.connect(self.database_file)
+				family_members=con.cursor().execute('''SELECT name 
+				    FROM family''').fetchall()
+				if family_members is None:
+					family_members=[]
+				else:
+					family_members=[f[0] for f in family_members]
 		
-				self.family_member_box['values']=family
-				self.significant_other_box['values']=family.append('')
+				self.family_member_box['values']=family_members
+				self.significant_other_box['values']=family_members+['']
 			self.check_family_buttons()
 	
 	#function to fill in the member info field when the value of the family_member
@@ -401,8 +359,8 @@ class FamilyTab(ttk.Frame):
 		#get the info from the database if family member has been specified
 		#if the value has been 'unselected' will check on buttons only
 		#will return default values if member is not in the database
-		if self.family_member!='':
-			member_info=query_member(self.database_file,self.family_member)
+		if self.family_member.get() in self.family_member_box['values']:
+			member_info=query_member(self.database_file,self.family_member.get())
 			
 			#fill in the variables
 			self.significant_other.set(member_info['significant_other'])
@@ -424,14 +382,17 @@ class FamilyTab(ttk.Frame):
 	def check_family_buttons(self,*args):
 		#if both the family and family_member values are set, the buttons can be
 		#active
-		create_state=('normal' if self.family.get() not in [None,'NULL','']\
-		    else 'disabled')
+		create_state=('normal' if self.family.get()\
+		 not in [None,'NULL','']+self.get_available_families() else 'disabled')
+	
 		create_style=('On.TButton' if create_state=='normal' else 'Off.TButton')
+	
 		self.create_button['state']=create_state
 		self.create_button['style']=create_style
 		
 		member_state=('normal' if (self.family.get() not in [None,'NULL','']) and \
 		    (self.family_member.get() not in [None,'NULL','']) else 'disabled')
+	
 		member_style=('On.TButton' if member_state=='normal' else 'Off.TButton')
 		 
 		self.add_or_update_member_button['state']=member_state
