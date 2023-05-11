@@ -3,6 +3,8 @@ from tkinter import ttk
 import time,os,glob
 import pandas as pd
 
+from functools import reduce
+
 from GiftExchangeUtilities.name_draw import generate_exchange,\
     output_giftee_assignments,get_previous_years,valid_year
 
@@ -18,6 +20,8 @@ class ExchangeTab(ttk.Frame):
 		self.parent=parent
 		self.app=app
 		self.master=master
+		
+		self.get_available_families=self.app.family_tab.get_available_families
 		
 		#add this tab to the notebook
 		self.parent.add(self,*args,**kwargs)
@@ -154,7 +158,6 @@ class ExchangeTab(ttk.Frame):
 		self.fifth_row.pack(side='top',fill='x',pady=(8,8))
 		self.quit_button.pack(side='left')
 	
-	
 	#function to add traces on variables
 	#even though we only have one frame, keep the approach (calling another method)
 	#in case we add more in the future
@@ -167,21 +170,18 @@ class ExchangeTab(ttk.Frame):
 	
 	#function to do the name draw
 	def draw_names(self,*args):
+		#make sure we have the database file
 		if hasattr(self.app.family_tab,'database_file'):
-			database_file=self.app.family_tab.database_file.get()
-			success=generate_exchange(database_file,
-			    skip_names=self.skip_members,
-			    num_previous_exclude=self.exclude_num_previous.get(),
-			    overwrite=self.overwrite_year.get(),new_year=self.year.get())
+			database_file=self.app.family_tab.database_file
 		else:
 			database_directory=os.path.join(self.app.app_dir,'GiftExchange_data',
 			    f'data_family_{self.family.get()}')
 				
 			database_file=os.path.join(self.database_directory,"GiftExchange.db")
 			
-			success=generate_exchange(database_file.get(),skip_names=self.skip_members,
-			    num_previous_exclude=self.exclude_num_previous.get(),
-			    overwrite=self.overwrite_year.get(),new_year=self.year.get())
+		success=generate_exchange(database_file,skip_names=self.skip_members,
+		    num_previous_exclude=self.exclude_num_previous.get(),
+		    overwrite=self.overwrite_year.get(),new_year=self.year.get())
 		
 		if success:
 			output_giftee_assignments(database_file,self.year.get())
@@ -245,7 +245,6 @@ class ExchangeTab(ttk.Frame):
 	#another window
 	def view_previous(self,*args):
 		if hasattr(self.app.family_tab,'database_file'):
-			#get the database fileif hasattr(self.app.family_tab,'database_file'):
 			database_file=self.app.family_tab.database_file.get()
 		else:
 			database_file=os.path.join(self.app.app_dir,'GiftExchange_data',
@@ -256,15 +255,14 @@ class ExchangeTab(ttk.Frame):
 		#and each nested dictionary has keys of the gifter names with
 		#values of the giftee names
 		previous_years_draws,names=get_previous_years(database_file,
-		    self.num_previous.get(),
-		    self.include_current.get())
+		    self.num_previous.get(),self.include_current.get())
 		
 		#straight forward to turn the dictionary and list of names
 		#into a dataframe
 		previous_exchanges=pd.DataFrame(previous_years_draws,index=names)
 		
 		#now just display results in the terminal window
-		#try to put tabulate as a dependancy, but just in case
+		#try to put tabulate as a dependency, but just in case
 		#we'll attempt to catch that error
 		try:
 			print(previous_exchanges.to_markdown())
@@ -272,6 +270,11 @@ class ExchangeTab(ttk.Frame):
 			print(previous_exchanges)
 	
 	def input_previous(self,*args):
+		#def add function to kill new window
+		#using the after method seems to avoid spinning ball of death on my mac
+		def new_window_quit(*args):
+			previous_year_window.after(10,previous_year_window.destroy)
+		
 		#def a function on the fly for a new button
 		def add_to_exchange(*args):
 			if hasattr(self.app.family_tab,'database_file'):
@@ -302,6 +305,7 @@ class ExchangeTab(ttk.Frame):
 				state='disabled'
 			
 			style=('On.TButton' if state=='normal' else 'Off.TButton')
+		
 			add_to_exchange_button['state']=state
 			add_to_exchange_button['style']=style
 		
@@ -328,8 +332,7 @@ class ExchangeTab(ttk.Frame):
 			    text='Add To Exchange',command=add_to_exchange,state='disabled',
 			    style='Off.TButton')
 			
-			quit_button=ttk.Button(previous_year_frame,
-			    command=previous_year_window.destroy)
+			quit_button=ttk.Button(previous_year_frame,command=new_window_quit)
 			
 			#now grid everything
 			previous_year_frame.grid(column=0,row=0,sticky='NESW')
@@ -354,15 +357,14 @@ class ExchangeTab(ttk.Frame):
 		
 		#if names is empty, nothing to do
 		else:
-			print(f'Name list for family {self.family.get()} came up empty,\
-			 nothing to do.')
+			print(f'Name list for family {self.family.get()} came up empty, nothing to do.')
 
-	
 	def check_exchange_buttons(self,*args):
 		#make sure that the selected family is valid before enabling
 		#the draw names button
 		button_state=('normal' if self.family.get() in self.get_available_families()\
 		    else 'disabled')
+	
 		button_style=('On.TButton' if button_state=='normal' else 'Off.TButton')
 		
 		self.draw_names_button['state']=button_state
@@ -377,19 +379,21 @@ class ExchangeTab(ttk.Frame):
 		self.input_previous_year_button['state']=button_state
 		self.input_previous_year_button['style']=button_style
 	
-	#function to list which families are available by investigating
-	def get_available_families(self,*args):
-		#check for available families
-		families=[]
-		if os.path.exists(os.path.join(self.app.app_directory,'GiftExchange_data')):
-			dir_list=glob.glob(os.path.join(self.app.app_directory,
-			'GiftExchange_data','data_family_*'))
-			if dir_list:
-				#we want to split on the underscore
-				#but allow for underscores in family names
-				families=[reduce(lambda s1,s2:s1+'_'+s2,dir_name.split('_')[2:]) for dir_name in dir_list]
-		
-		return families
+#	#function to list which families are available by investigating
+#	def get_available_families(self,*args):
+#		#check for available families
+#		families=[]
+#		if os.path.exists(os.path.join(self.app.app_directory,'GiftExchange_data')):
+#			dir_list=glob.glob(os.path.join(self.app.app_directory,
+#			'GiftExchange_data','data_family_*'))
+#
+#			if dir_list:
+#				#we want to split on the underscore
+#				#but allow for underscores in family names
+#				families=[reduce(lambda s1,s2:s1+'_'+s2,\
+#				    dir_name.split(os.sep)[-1].split('_')[2:]) for dir_name in dir_list]
+#		
+#		return families
 	
 	#function for quit button, I think using the 'after' method will avoid
 	#the GUI hanging up as I'm seeing on my mac
