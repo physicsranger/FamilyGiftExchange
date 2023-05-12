@@ -516,7 +516,7 @@ def get_previous_years(database_file,number_to_view=1,include_latest=False,cur=N
 			else:
 				previous_draws[year]['UNKNOWN']=name_lookup.get(row[year_idx+1])
 				if 'UNKNOWN' not in names:
-					names.append('UNKOWN')
+					names.append('UNKNOWN')
 	
 	if con is not None:
 		con.close()

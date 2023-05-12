@@ -78,7 +78,7 @@ class MainApp:
 		#create a terminal window
 		self.terminal_window=TermOut(self.terminal)
 		
-		self.pack_all()
+		self.construct()
 		
 		#at the very last assign stdout and stderr to the terminal window, otherwise
         #we miss important code errors
@@ -92,19 +92,27 @@ class MainApp:
 		self.exchange_tab=ExchangeTab(self.notebook,self,self.master,
 		    text='Manage Name Draws')
 
-	def pack_all(self):
-		#place the notebook and the tabs
-		self.notebook.pack(side='top',expand=True,fill='both')
+	def construct(self):
+		#set parameters for resizing
+		self.master.columnconfigure(0,weight=1)
+		self.master.rowconfigure(1,weight=1)
 		
+		#use grid for the notebook and terminal and the tabs
+		self.notebook.grid(column=0,row=0,sticky='NESW')
+		#self.notebook.columnconfigure(0,weight=1)
+		
+		self.terminal.grid(column=0,row=1,sticky='NESW')
+		#self.terminal.columnconfigure(0,weight=1)
+		
+		self.text_y_scroll.grid(column=1,row=1,sticky='NES')
+		self.text_x_scroll.grid(column=0,row=2,columnspan=2,sticky='EW')
+		
+		#use pack for the tabs inside the notebook
 		self.family_tab.pack_all()
 		
 		self.exchange_tab.pack_all()
 		
-		#place the terminal window
-		self.terminal.pack(side='bottom',fill='both',expand=True)
 		
-		self.text_y_scroll.pack(side='left',fill='y',expand=True)
-		self.text_x_scroll.pack(side='bottom',fill='x',expand=True)
 
 
 
