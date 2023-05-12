@@ -91,13 +91,14 @@ class FamilyTab(ttk.Frame):
 		self.family_member=tki.StringVar()
 		self.family_member_label=ttk.Label(parent,text='Family Member:')
 		self.family_member_box=ttk.Combobox(parent,textvariable=self.family_member)
-		self.family_member_box.bind('<<ComboboxSelected>>',self.get_member_info)
+		self.family_member_box.bind('<<ComboboxSelected>>',self.list_family)
 		
 		#significant other variable, label, and combobox
 		self.significant_other=tki.StringVar()
 		self.significant_other_label=ttk.Label(parent,text='Significant Other:')
 		self.significant_other_box=ttk.Combobox(parent,
 		    textvariable=self.significant_other)
+		self.significant_other_box.bind('<<ComboboxSelected>>',self.list_family)
 	
 	def fill_second_family_row(self,parent):
 		#now create variables and widgets for the family member
@@ -243,6 +244,7 @@ class FamilyTab(ttk.Frame):
 	
 	def add_create_traces(self):
 		self.family.trace_add('write',self.list_family)
+		self.overwrite.trace_add('write',self.check_family_buttons)
 	
 	def add_family_traces(self):
 		self.family_member.trace_add('write',self.get_member_info)
@@ -318,10 +320,16 @@ class FamilyTab(ttk.Frame):
 	#function to make a member dictionary needed for some utility functions
 	def make_member_dictionary(self,*args):
 		member={'family':{'name':self.family_member.get(),
-		  'email':self.email.get(),
-		  'address':reduce(lambda s1,s2:s1.get()+'\n'+s2.get(),[self.address_line_1,
-		    self.address_line_2,self.city,self.state,self.zip_code,self.country])},
-		  'significant_other':self.significant_other.get()}
+		  'email':self.email.get()}}
+		
+		address=reduce(lambda s1,s2:s1+'\n'+s2,[self.address_line_1.get(),
+		    self.address_line_2.get(),self.city.get(),self.state.get(),
+		    self.zip_code.get(),self.country.get()])
+		if address!='\n\n\n\n\n':
+			member['family']['address']=address
+			
+		if self.significant_other.get()!='':
+			member['significant_other']=self.significant_other.get()
 		return member
 	
 	#function to remove a family member from the database
@@ -363,16 +371,19 @@ class FamilyTab(ttk.Frame):
 			member_info=query_member(self.database_file,self.family_member.get())
 			
 			#fill in the variables
-			self.significant_other.set(member_info['significant_other'])
-			self.email.set(member_info['email'])
+			self.significant_other.set(member_info.get('significant_other'))
+			self.email.set('' if member_info['email'] is None\
+			    else member_info['email'])
 			
-			address=member_info['address'].split('\n')
-			self.address_line_1.set(address[0])
-			self.address_line_2.set(address[1])
-			self.city.set(address[2])
-			self.state.set(address[3])
-			self.zip_code.set(address[4])
-			self.country.set(address[5])
+			address=member_info['address']
+			if address is not None:
+				address=address.split('\n')
+				self.address_line_1.set(address[0])
+				self.address_line_2.set(address[1])
+				self.city.set(address[2])
+				self.state.set(address[3])
+				self.zip_code.set(address[4])
+				self.country.set(address[5])
 		
 		#now check to see if 
 		self.check_family_buttons()
@@ -382,8 +393,10 @@ class FamilyTab(ttk.Frame):
 	def check_family_buttons(self,*args):
 		#if both the family and family_member values are set, the buttons can be
 		#active
-		create_state=('normal' if self.family.get()\
-		 not in [None,'NULL','']+self.get_available_families() else 'disabled')
+		create_state=('normal' if (self.family.get()\
+		 not in [None,'NULL','']+self.get_available_families()) or\
+		 (self.family.get() in self.get_available_families()\
+		  and self.overwrite.get()) else 'disabled')
 	
 		create_style=('On.TButton' if create_state=='normal' else 'Off.TButton')
 	

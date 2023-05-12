@@ -3,10 +3,13 @@ from tkinter import ttk
 import time,os,glob
 import pandas as pd
 
+from rich import print as rprint
+from rich.table import Table
+
 from functools import reduce
 
 from GiftExchangeUtilities.name_draw import generate_exchange,\
-    output_giftee_assignments,get_previous_years,valid_year
+    output_giftee_assignments,get_previous_years,valid_year,add_previous_year
 
 #make a class for the secondary tab where the past history of the gift exchange
 #can be viewed with some logic to hide the most-recent exchange unless
@@ -245,7 +248,7 @@ class ExchangeTab(ttk.Frame):
 	#another window
 	def view_previous(self,*args):
 		if hasattr(self.app.family_tab,'database_file'):
-			database_file=self.app.family_tab.database_file.get()
+			database_file=self.app.family_tab.database_file
 		else:
 			database_file=os.path.join(self.app.app_dir,'GiftExchange_data',
 			    f'data_family_{self.family.get()}','GiftExchange.db')
@@ -262,11 +265,22 @@ class ExchangeTab(ttk.Frame):
 		previous_exchanges=pd.DataFrame(previous_years_draws,index=names)
 		
 		#now just display results in the terminal window
-		#try to put tabulate as a dependency, but just in case
-		#we'll attempt to catch that error
+		#try to put rich as a dependency, but just in case
+		#something goes wrong, try to catch
 		try:
-			print(previous_exchanges.to_markdown())
-		except ImportError:
+			#print(previous_exchanges.to_markdown())
+			exchange_table=Table(title='Gift Exchange',show_lines=True)
+			exchange_table.add_column('Name',header_style='red')
+			
+			for column in previous_exchanges.columns:
+				exchange_table.add_column(column,header_style='green')
+			
+			for name in previous_exchanges.index:
+				exchange_table.add_row(name,*previous_exchanges.loc[name])
+			
+			rprint(exchange_table)
+			
+		except:
 			print(previous_exchanges)
 	
 	def input_previous(self,*args):
@@ -279,7 +293,7 @@ class ExchangeTab(ttk.Frame):
 		def add_to_exchange(*args):
 			if hasattr(self.app.family_tab,'database_file'):
 				#get the database fileif hasattr(self.app.family_tab,'database_file'):
-				database_file=self.app.family_tab.database_file.get()
+				database_file=self.app.family_tab.database_file
 			else:
 				database_file=os.path.join(self.app.app_dir,'GiftExchange_data',
 				    f'data_family_{self.family.get()}','GiftExchange.db')
@@ -310,7 +324,7 @@ class ExchangeTab(ttk.Frame):
 			add_to_exchange_button['style']=style
 		
 		#first, get the names
-		names=self.app.family_tab.family_box['values']
+		names=self.app.family_tab.family_member_box['values']
 		
 		#if the list of names is not empty, open up a new window to fill in
 		#previous year exchange info
@@ -332,7 +346,8 @@ class ExchangeTab(ttk.Frame):
 			    text='Add To Exchange',command=add_to_exchange,state='disabled',
 			    style='Off.TButton')
 			
-			quit_button=ttk.Button(previous_year_frame,command=new_window_quit)
+			quit_button=ttk.Button(previous_year_frame,text='Close',
+			    command=new_window_quit)
 			
 			#now grid everything
 			previous_year_frame.grid(column=0,row=0,sticky='NESW')

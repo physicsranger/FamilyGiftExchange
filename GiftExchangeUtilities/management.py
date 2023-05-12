@@ -53,7 +53,7 @@ def add_or_update_family_member(database_file,member):
 		elif address_changed(database_file,address_id,name):
 			#check if multiple people have that address
 			if count_at_address(database_file,address_id)>1:
-				add_address(database_fil,address)
+				add_address(database_file,address)
 				address_id=get_address_id(database_file,address)
 			#if not, then just update the address
 			else:
@@ -387,9 +387,9 @@ def query_member(database_file,name,cur=None):
 	if member_in_database(None,name,cur):
 		row=cur.execute('''SELECT s.so_id, f.email, a.address
 		FROM family AS f
-		JOIN significant_other as s
+		LEFT JOIN significant_other as s
 		ON f.id=s.id
-		JOIN addresses as a
+		LEFT JOIN addresses as a
 		ON f.address_id=a.id
 		WHERE f.name=?''',(name,)).fetchone()
 		
