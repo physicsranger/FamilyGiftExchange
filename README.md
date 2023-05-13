@@ -9,6 +9,8 @@ The FamilyGiftExchange python application allows you to create and manage gift e
 You can generate name draws for a new year, input gifter-giftee assignments from previous years (if you had been tracking your own gift exchanges manually, for instance, review the exchanges from previous years, and more.
 
 ## Installation
+I plan to set things up so a standalone executable can be generated with pyInstaller, but that is still a work in progress.
+
 Currently, if you want to try out the application, you can download the repo and call the main file _FamilyGiftExchange.py_ on the command line. Either add the main repo folder to your PATH and type:
 
 `FamilyGiftExchange.py`
@@ -17,7 +19,11 @@ or you can navigate to the repo directory and use python directly (a good idea i
 
 `python FamilyGiftExchange.py`
 
-I plan to set things up so a standalone executable can be generated with pyInstaller, but that is still a work in progress.
+## Usage
+When you start the application for the first time, you'll see something similar to the image below, but the **Create Family** button will be disabeled and not stand out as prominently.  To get started, select the _Choose Family_ dropdown box, which will be empty, and start typing the name of your family, which will activate the button.  White spaces in the name will be removed and replaced with underscores.
 
-##
+![To create a family, simply enter your family name and press the Create Family button, you will see status messages in the terminal window letting you know if the creation was successful.](images/CreateAFamily.png "Create a family")
+
+Now more stuff.
+
 
