@@ -184,12 +184,12 @@ class ExchangeTab(ttk.Frame):
 			
 		success=generate_exchange(database_file,skip_names=self.skip_members,
 		    num_previous_exclude=self.exclude_num_previous.get(),
-		    overwrite=self.overwrite_year.get(),new_year=self.year.get())
+		    overwrite=self.overwrite_year.get(),
+		    new_year=self.exchange_year.get())
 		
 		if success:
-			output_giftee_assignments(database_file,self.year.get())
-			print(f'Names drawn and assignments generated text files written\
-			 in {os.path.join(os.path.dirname(database_file),str(year))}')
+			output_giftee_assignments(database_file,self.exchange_year.get())
+			print(f'Names drawn and assignments generated text files written in {os.path.join(os.path.dirname(database_file),str(self.exchange_year.get()))}')
 		else:
 			print('Could not draw names, examine output for error messages.')
 		return
@@ -307,7 +307,7 @@ class ExchangeTab(ttk.Frame):
 			#this relies on names and name_variables having the same order
 			#I need to think about if there is a risk things could get swapped around
 			draws=dict((name,variable.get()) for name,variable in\
-			    zip(names,name_variables))
+			    zip(names,name_variables) if variable.get()!='')
 			
 			add_previous_year(database_file,previous_year.get(),draws)
 		
@@ -317,7 +317,7 @@ class ExchangeTab(ttk.Frame):
 			if valid_year(previous_year.get()):
 				state='normal'
 				for name in name_variables:
-					if not (name.get().lower=='null' or name.get() in names):
+					if not (name.get()=='' or name.get() in names):
 						state='disabled'
 						break
 			else:
@@ -342,7 +342,7 @@ class ExchangeTab(ttk.Frame):
 			previous_year_entry=ttk.Entry(previous_year_frame,
 			    textvariable=previous_year,width=6)
 			
-			name_variables=[tki.StringVar(value='NULL') for _ in names]
+			name_variables=[tki.StringVar() for _ in names]
 			name_labels=[ttk.Label(previous_year_frame,text=name) for name in names]
 			name_entries=[ttk.Entry(previous_year_frame,
 			    textvariable=variable,width=12) for variable in name_variables]

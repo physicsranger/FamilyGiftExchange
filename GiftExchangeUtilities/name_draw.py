@@ -118,7 +118,7 @@ overwrite=False,new_year=None):
 			#now, if exclude_years isn't empty,
 			#add your recent giftees to your current exclude list
 			for year in exclude_years:
-				member_info[this_row['name']]['excludes'].append(this_row[f'e.{year}'])
+				member_info[this_row['name']]['excludes'].append(this_row[year])
 	
 	#before we proceed to making the draws, let's check that the excludes
 	#haven't resulted in a situation where someone has no valid options
@@ -400,7 +400,10 @@ def get_exclusion_years(database_file,this_year,num_exclude,cur=None):
 	
 	#now, check the previous years, may need to account for non-consecutive years
 	years=[descr[0] for descr in cur.execute('SELECT * FROM exchange').description if descr[0]!='id']
-	years=[[year,this_year-int(year.split('_')[1])] for year in years].sort(reverse=True)
+	years.remove(f'Year_{this_year}')
+	years=[[year,int(this_year)-int(year.split('_')[1])]\
+	    for year in years]
+	years.sort(reverse=True)
 	
 	if years is None:
 		print(f'No previous years to exclude')
@@ -408,7 +411,7 @@ def get_exclusion_years(database_file,this_year,num_exclude,cur=None):
 	else:
 		if len(years)<num_exclude:
 			print(f'Requested to exclude possible giftees for each family member from {num_exclude} previous years, but there are only {len(years)} years in the exchange.')
-			print('We will only exclude giftees for each family member using {len(years)} years.')
+			print(f'We will only exclude giftees for each family member using {len(years)} years.')
 			num_exclude=len(years)
 		years_to_exclude=[year[0] for year in years[:num_exclude]]
 	
