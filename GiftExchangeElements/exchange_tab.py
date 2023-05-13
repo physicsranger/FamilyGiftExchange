@@ -199,25 +199,27 @@ class ExchangeTab(ttk.Frame):
 	def choose_members_to_skip(self,*args):
 		#try creating a function dynamically for the button on this window
 		def assign_skip_names(*args):
-			self.skip_members=[name for name,flag in zip(names,name_flags) if flag]
+			self.skip_members=[name for name,flag in zip(names,name_flags) if flag.get()]
 			skip_window.destroy()
 		
 		#get the family member names from the family_tab
-		names=self.app.family_tab.family_box['values']
+		names=self.app.family_tab.family_member_box['values']
 		
 		#if the list of names is not empty
 		if names:
 			#make a popup window for selecting people to exclude
 			skip_window=tki.Toplevel(self.master)
+			skip_window.columnconfigure(0,weight=1)
+			skip_window.title('Skip Members')
 			skip_frame=ttk.Frame(skip_window,borderwidth=1,relief='raised')
 			skip_label=ttk.Label(skip_frame,text='Skip?')
 			
 			#make flags for each name
-			name_flags=[tki.BooleanVar(value=(False if name not in self.skip_members\
-			     else True)) for _ in names]
+			name_flags=[tki.BooleanVar(value=False if name not in self.skip_members\
+			     else True) for name in names]
 			#make checkbuttons for each name
 			name_checks=[ttk.Checkbutton(skip_frame,variable=name_flag,
-			    onvalue=True,offvalue=False) for flag in name_flags]
+			    onvalue=True,offvalue=False) for name_flag in name_flags]
 			#make labels for each name
 			name_labels=[ttk.Label(skip_frame,text=name) for name in names]
 			
@@ -235,7 +237,10 @@ class ExchangeTab(ttk.Frame):
 				label.grid(column=1,row=row_idx,sticky='W')
 				row_idx+=1
 			
-			submit_button.grid(column=0,row=row_idx,columnspan=2)
+			submit_button.grid(column=0,row=row_idx,columnspan=2,
+			    padx=10)
+			
+			skip_window.geometry(f'250x{20*(len(name_checks)+2)+15}')
 			
 			skip_window.grab_set()
 		
@@ -270,10 +275,10 @@ class ExchangeTab(ttk.Frame):
 		try:
 			#print(previous_exchanges.to_markdown())
 			exchange_table=Table(title='Gift Exchange',show_lines=True)
-			exchange_table.add_column('Name',header_style='red')
+			exchange_table.add_column('Name')
 			
 			for column in previous_exchanges.columns:
-				exchange_table.add_column(column,header_style='green')
+				exchange_table.add_column(column.strip('Year_'))
 			
 			for name in previous_exchanges.index:
 				exchange_table.add_row(name,*previous_exchanges.loc[name])
