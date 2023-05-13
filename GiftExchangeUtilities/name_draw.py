@@ -463,10 +463,10 @@ def get_num_previous_years(database_file,cur=None):
 		con=None
 	
 	#get the number of years, excluding the current year, from the number of columns
-	#subtracting 1 for the current year and 1 more for the 'id' column
+	#subtracting 1 for the 'id' column
 	#but we'll make sure and at least return a value of 0 in the event
 	#that the database is super new and has only the 'id' column in this table
-	num_years=max(0,len(cur.execute('SELECT * FROM exchange').description)-2)
+	num_years=max(0,len(cur.execute('SELECT * FROM exchange').description)-1)
 	
 	if con is not None:
 		con.close()
@@ -474,7 +474,8 @@ def get_num_previous_years(database_file,cur=None):
 	return num_years
 
 
-def get_previous_years(database_file,number_to_view=1,include_latest=False,cur=None):
+def get_previous_years(database_file,number_to_view=1,include_latest=False,
+    this_year=time.localtime().tm_year,cur=None):
 	#do a few sanity checks on the number_to_view_parameter
 	if number_to_view<=0:
 		raise ValueError(f'Requested non-sensical {number_to_view} years to view.')
@@ -497,7 +498,7 @@ def get_previous_years(database_file,number_to_view=1,include_latest=False,cur=N
 	
 	#if we're not including the latest year, ditch it
 	if not include_latest:
-		years=years[1:]
+		years.remove(f'Year_{this_year}')
 	
 	#get the years we want
 	years=years[:number_to_view]
@@ -507,7 +508,7 @@ def get_previous_years(database_file,number_to_view=1,include_latest=False,cur=N
 	
 	#build the query, we want the id column and the column for each year
 	query='SELECT id, '
-	query+=reduce(lambda s1,s2:f'{s1}, Year_{s2}',years)
+	query+=reduce(lambda s1,s2:f'{s1}, {s2}',years)
 	query+=' FROM exchange'
 	
 	#this should give me tuples with id,year_0,year_1,..
