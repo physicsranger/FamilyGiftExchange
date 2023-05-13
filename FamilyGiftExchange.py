@@ -6,13 +6,17 @@ import os,sys
 from GiftExchangeElements.family_tab import FamilyTab
 from GiftExchangeElements.exchange_tab import ExchangeTab
 
-'''First we have to make the 'family' table, that will give each person a unique
-ID, and then that ID can more easily (safely?) be used for the column name in the 
-'exchange' table where the rows are years.  We then can also use those unique identifiers
-to create a 'significant_other' table to use in exclusions.  The family table will have
-the actual names and email addresses'''
+'''This file is meant to be called directly from the command line (as an
+executable or as python FamilyGiftExchange.py) to launch a GUI application
+for creating, managing, and running a "family" gift exchange.  You can have
+multiple families, all separate from each other, where family can mean your
+relatives, a group of friends, co-workers, etc.
+See the repository README for information on using the GUI and on installing
+it as a standalone executable with pyinstaller.
+'''
 
-#class for an output text terminal
+#class for a widget which will capture the 'terminal' output so the application
+#can display messages to the user without needing to open a terminal window
 class TermOut:
         def __init__(self,textwidget):
                 self.twidget=textwidget
@@ -26,6 +30,10 @@ class TermOut:
         def flush(self):
                 pass
 
+#This class represents the application and generally isn't
+#called directly.  If you desire to call it interactively or
+#from a script, master should be a tkinter Tk instance
+#the __init__ function calls all the necessary functions to build the GUI
 class MainApp:
 	def __init__(self,master):
 		self.master=master
@@ -85,13 +93,21 @@ class MainApp:
 		sys.stdout=self.terminal_window
 		sys.stderr=self.terminal_window
 	
+	#simply a function to make the tabs of the notebook, using the classes
+	#imported from GiftExchangeElements
 	def make_tabs(self):
+		#a tab for managing your family to include:
+		#creating it, adding members, updating member info, removing members
 		self.family_tab=FamilyTab(self.notebook,self,self.master,
 		    text='Manage Your Family')
 		
+		#a tab to manage the gift exchange to include:
+		#adding draws from previous years, indicating members to skip,
+		#viewing draws from previous years, and drawing names for this year
 		self.exchange_tab=ExchangeTab(self.notebook,self,self.master,
 		    text='Manage Name Draws')
-
+	
+	#function to construct the GUI using a mix of grid and pack
 	def construct(self):
 		#set parameters for resizing
 		self.master.columnconfigure(0,weight=1)
@@ -107,23 +123,19 @@ class MainApp:
 		self.text_y_scroll.grid(column=1,row=1,sticky='NES')
 		self.text_x_scroll.grid(column=0,row=2,columnspan=2,sticky='EW')
 		
-		#use pack for the tabs inside the notebook
+		#call the pack_all methods of each tab of the notebook
+		#to place widgets within the tabs
 		self.family_tab.pack_all()
 		
 		self.exchange_tab.pack_all()
-		
-		
 
-
-
-#function to be called when the eventual executable/script is called
+#function to be called when the executable/script is called
 #will create app as a MainApp instance
 def main():
 	root=tki.Tk()
 	root.title('Family Gift Exchange')
 	app=MainApp(root)
 	root.mainloop()
-
 
 if __name__=='__main__':
 	main()
