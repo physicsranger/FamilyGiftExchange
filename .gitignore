@@ -5,3 +5,4 @@ GiftExchange_data
 dist
 build
 *.spec
+*.DS_Store

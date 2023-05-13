@@ -9,15 +9,29 @@ The FamilyGiftExchange python application allows you to create and manage gift e
 You can generate name draws for a new year, input gifter-giftee assignments from previous years (if you had been tracking your own gift exchanges manually, for instance, review the exchanges from previous years, and more.
 
 ## Installation
-I plan to set things up so a standalone executable can be generated with pyInstaller, but that is still a work in progress.
+Start by cloning the repository and ensuring that your system satisfies all the dependencies in the requirements.txt file.
 
-Currently, if you want to try out the application, you can download the repo and call the main file _FamilyGiftExchange.py_ on the command line. Either add the main repo folder to your PATH and type:
+Once that is done, you can either navigate to the main repo directory and call the script _FamilyGiftExchange.py_ from the command line:
 
 `FamilyGiftExchange.py`
 
-or you can navigate to the repo directory and use python directly (a good idea if the shebang in the script doesn't work and the above command fails):
+or call the script with python directly (a good idea if the shebang in the script doesn't work and the above command fails):
 
 `python FamilyGiftExchange.py`
+
+You could also put the main repo directory in your PATH and call the script from the terminal, regardless of which directory you're in.
+
+Alternatively, if you want to generate a standalone executable with pyInstaller (you can download this with `pip install pyinstaller`), navigate to the main repo directory and run the _install.py_ script, using either:
+
+`install.py`
+
+or:
+
+`python install.py`
+
+This will take a few minutes but then generate a standalone executable you can invoke from the command line or by clicking the icon in a file explorer (for Mac OS, it will generate a .app file, as well).
+
+As I understand it, the executable is very dependent on the operating system, so (currently) there is no executable for users to grab and go.  This being the case, the .gitignore file is set up to not include the directories and files made by pyInstaller.
 
 ## Usage
 
@@ -113,7 +127,7 @@ Depending on how large your family is, you may need to resize the window to see 
 
 #### Managing multiple families
 
-If you need to manage multiple families, simply create a new family in the first tab, fill in new family member information, and make name draws for that family following the same instructions.  Even if there is member overlap between the two families, you'll still have to reenter all the information for members in the same family (the application is not currently set up to search other available family databases to prefill that information).
+If you need to manage multiple families, simply create a new family in the first tab, fill in new family member information, and make name draws for that family following the same instructions.  Even if there is member overlap between the two families, you'll still have to reenter all the information for members in the same family (the application is not currently set up to search other available family databases to pre fill that information).
 
 #### Feature requests/bug reports
 
@@ -121,8 +135,10 @@ Please feel free to contact me with ideas for features to add and to report bugs
 
 #### Planned features progress
 
- - [ ] Standalone executable and instructions with pyInstaller.
+ - [x] ~~Standalone~~ executable and instructions with pyInstaller.
+   - [ ] Investigate GitHub workflows (or other options) to generate executables for other operating systems for wider possible distribution
  - [ ] Email client integration. 
+ - [ ] App icon
  
 
 
