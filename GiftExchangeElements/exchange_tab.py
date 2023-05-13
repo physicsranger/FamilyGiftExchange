@@ -130,8 +130,9 @@ class ExchangeTab(ttk.Frame):
 		
 		self.num_previous=tki.IntVar(value=1)
 		self.num_previous_label=ttk.Label(parent,text='Number of years to view')
-		self.num_previous_entry=ttk.Entry(parent,
-		    textvariable=self.num_previous,width=2)
+		self.num_previous_spinbox=ttk.Spinbox(parent,
+		    from_=0,to=max(1,self.get_num_years()),increment=1,width=2,
+		    textvariable=self.num_previous)
 		
 		self.include_current=tki.BooleanVar(value=False)
 		self.include_current_check=ttk.Checkbutton(parent,
@@ -185,7 +186,7 @@ class ExchangeTab(ttk.Frame):
 		self.third_row.pack(side='top',fill='x',pady=(8,8))
 		self.view_previous_years_button.pack(side='left')
 		self.num_previous_label.pack(side='left',padx=(8,0))
-		self.num_previous_entry.pack(side='left',padx=(0,8))
+		self.num_previous_spinbox.pack(side='left',padx=(0,8))
 		self.include_current_label.pack(side='left')
 		self.include_current_check.pack(side='left')
 	
@@ -308,7 +309,8 @@ class ExchangeTab(ttk.Frame):
 		#and each nested dictionary has keys of the gifter names with
 		#values of the giftee names
 		previous_years_draws,names=get_previous_years(database_file,
-		    self.num_previous.get(),self.include_current.get())
+		    self.num_previous.get(),self.include_current.get(),
+		    self.exchange_year.get())
 		
 		#straight forward to turn the dictionary and list of names
 		#into a dataframe
@@ -360,6 +362,7 @@ class ExchangeTab(ttk.Frame):
 			add_previous_year(database_file,previous_year.get(),draws)
 			
 			self.exclude_num_previous_spinbox['to']=max(1,self.get_num_years())
+			self.num_previous_spinbox['to']=max(1,self.get_num_years())
 		
 		#add a function to check that the names are all in the database
 		#or set to NULL
@@ -453,6 +456,7 @@ class ExchangeTab(ttk.Frame):
 		self.input_previous_year_button['style']=button_style
 		
 		self.exclude_num_previous_spinbox['to']=max(1,self.get_num_years())
+		self.num_previous_spinbox['to']=max(1,self.get_num_years())
 	
 	#function to get the number of years in a database file, skipping the most-recent
 	#year, so we can set the maximum number of years used for excludes
