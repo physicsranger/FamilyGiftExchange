@@ -11,8 +11,8 @@ from GiftExchangeUtilities.management import (
 	remove_family_member,
 	query_member)
 
-#make a class for the main tab where you manage your family database
-#and create the gift draws for a given year
+'''This class creates a tab for the main app notebook where you manage
+your family database(s).'''
 class FamilyTab(ttk.Frame):
 	def __init__(self,parent,app,master,*args,**kwargs):
 		#do the Frame initialization
@@ -26,25 +26,33 @@ class FamilyTab(ttk.Frame):
 		#add this tab to the notebook
 		self.parent.add(self,*args,**kwargs)
 		
+		#make the frames within this tab and create widgets for each
 		self.make_frames()
 		
+		#add traces on variables to update other variables and to
+		#control button states
 		self.add_traces()
 	
+	#function to make the two frames of the tab and widgets
+	#for each
 	def make_frames(self):
 		#make a frame for the create database button and such
 		self.create_frame=ttk.Frame(self,borderwidth=1,relief='sunken')
 		self.fill_create_frame(self.create_frame)
 		
-		#make a frame for entering family info
+		#make a frame for managing family info
 		self.family_frame=ttk.Frame(self,borderwidth=1,relief='sunken')
 		self.fill_family_frame(self.family_frame)
 	
+	#create the widgets which will go in the create frame
 	def fill_create_frame(self,parent):
-		#first off, button to create an empty database with
+		#make a button to create an empty database with
 		#all the tables we'll want to fill in later
 		self.create_button=ttk.Button(parent,text='Create Family',
 		    command=self.create_family,state='disabled',style='Off.TButton')
 		
+		#need a variable for the family we're working with, also create
+		#a drop down box listing possible families
 		self.family=tki.StringVar()
 		self.family_label=ttk.Label(parent,text='Choose Family')
 		self.family_box=ttk.Combobox(parent,textvariable=self.family)
@@ -57,7 +65,10 @@ class FamilyTab(ttk.Frame):
 		self.overwrite_label=ttk.Label(parent,text='Overwrite')
 		self.overwrite_check=ttk.Checkbutton(parent,variable=self.overwrite,
 		    onvalue=True,offvalue=False)
-		
+	
+	#function to create widgets within the family frame
+	#given the desired setup, we make Frames for the individual rows
+	#and then call a function to make widgets for each row	
 	def fill_family_frame(self,parent):
 		#make the first row with family member and significant other
 		#labels and dropdown boxes
@@ -88,6 +99,7 @@ class FamilyTab(ttk.Frame):
 		self.seventh_family_row=ttk.Frame(parent,borderwidth=1,relief='flat')
 		self.fill_seventh_family_row(self.seventh_family_row)
 	
+	#function to create widgets for the first row of the family frame
 	def fill_first_family_row(self,parent):
 		#variable, label, and combobox entry for a family member
 		self.family_member=tki.StringVar()
@@ -102,6 +114,7 @@ class FamilyTab(ttk.Frame):
 		    textvariable=self.significant_other)
 		self.significant_other_box.bind('<<ComboboxSelected>>',self.list_family)
 	
+	#function to create widgets for the second row of the family frame
 	def fill_second_family_row(self,parent):
 		#now create variables and widgets for the family member
 		#email and address info
@@ -109,18 +122,21 @@ class FamilyTab(ttk.Frame):
 		self.email_label=ttk.Label(parent,text='Email address:')
 		self.email_entry=ttk.Entry(parent,textvariable=self.email)#,width=30)
 	
+	#function to create widgets for the third row of the family frame
 	def fill_third_family_row(self,parent):
 		self.address_line_1=tki.StringVar()
 		self.address_line_1_label=ttk.Label(parent,text='Address line 1')
 		self.address_line_1_entry=ttk.Entry(parent,
 		    textvariable=self.address_line_1)#,width=40)
 	
+	#function to create widgets for the fourth row of the family frame
 	def fill_fourth_family_row(self,parent):
 		self.address_line_2=tki.StringVar()
 		self.address_line_2_label=ttk.Label(parent,text='Address line 2')
 		self.address_line_2_entry=ttk.Entry(parent,
 		    textvariable=self.address_line_2)#,width=40)
 	
+	#function to create widgets for the fith row of the family frame
 	def fill_fifth_family_row(self,parent):
 		self.city=tki.StringVar()
 		self.state=tki.StringVar()
@@ -134,11 +150,13 @@ class FamilyTab(ttk.Frame):
 		self.state_entry=ttk.Entry(parent,textvariable=self.state,width=12)
 		self.zip_code_entry=ttk.Entry(parent,textvariable=self.zip_code,width=8)
 	
+	#function to create widgets for the sixth row of the family frame
 	def fill_sixth_family_row(self,parent):
 		self.country=tki.StringVar()
 		self.country_label=ttk.Label(parent,text='Country')
 		self.country_entry=ttk.Entry(parent,textvariable=self.country,width=12)
 	
+	#function to create widgets for the seventh row of the family frame
 	def fill_seventh_family_row(self,parent):
 		self.add_or_update_member_button=ttk.Button(parent,text='Add/Update Member Info',
 		    command=self.add_or_update_member,state='disabled',style='Off.TButton')
@@ -148,11 +166,15 @@ class FamilyTab(ttk.Frame):
 		
 		self.quit_button=ttk.Button(parent,text='Quit',command=self.quit)
 	
+	#function to call pack all widgets associated with this tab
 	def pack_all(self):
+		#first, pack everything in the create frame
 		self.pack_create_frame()
 		
+		#next, pack everything in the family frame
 		self.pack_family_frame()
 	
+	#pack the create frame and widgets within the frame
 	def pack_create_frame(self):
 		#first, place the frame itself at top, tell it to fill horizontally
 		self.create_frame.pack(side='top',fill='x',expand=True)
@@ -166,6 +188,8 @@ class FamilyTab(ttk.Frame):
 		self.overwrite_check.pack(side='left')
 		self.overwrite_label.pack(side='left')
 	
+	#function to pack the family frame and then, one row at at time
+	#pack the rest of the widgets
 	def pack_family_frame(self):
 		#first,place the frame itself, below create frame, set to fill horizontally
 		self.family_frame.pack(side='top',fill='both',expand=True)
@@ -184,7 +208,8 @@ class FamilyTab(ttk.Frame):
 		self.pack_sixth_family_row()
 		
 		self.pack_seventh_family_row()
-		
+	
+	#pack the first row of the family frame and widgets within it	
 	def pack_first_family_row(self):
 		self.first_family_row.pack(side='top',fill='x')
 		
@@ -194,24 +219,28 @@ class FamilyTab(ttk.Frame):
 		self.significant_other_label.pack(side='left')
 		self.significant_other_box.pack(side='left')
 	
+	#pack the second row of the family frame and widgets within it
 	def pack_second_family_row(self):
 		self.second_family_row.pack(side='top',fill='x')
 		
 		self.email_label.pack(side='left')
 		self.email_entry.pack(side='left',fill='x',expand=True,padx=(0,8))
-		
+	
+	#pack the third row of the family frame and widgets within it	
 	def pack_third_family_row(self):
 		self.third_family_row.pack(side='top',fill='x')
 		
 		self.address_line_1_label.pack(side='left')
 		self.address_line_1_entry.pack(side='left',fill='x',expand=True,padx=(0,8))
-		
+	
+	#pack the fourth row of the family frame and widgets within it
 	def pack_fourth_family_row(self):
 		self.fourth_family_row.pack(side='top',fill='x')
 		
 		self.address_line_2_label.pack(side='left')
 		self.address_line_2_entry.pack(side='left',fill='x',expand=True,padx=(0,8))
 	
+	#pack the fifth row of the family frame and widgets within it
 	def pack_fifth_family_row(self):
 		self.fifth_family_row.pack(side='top',fill='x')
 		
@@ -223,13 +252,15 @@ class FamilyTab(ttk.Frame):
 		
 		self.zip_code_label.pack(side='left')
 		self.zip_code_entry.pack(side='left')
-		
+	
+	#pack the sixth row of the family frame and widgets within it
 	def pack_sixth_family_row(self):
 		self.sixth_family_row.pack(side='top',fill='x')
 		
 		self.country_label.pack(side='left')
 		self.country_entry.pack(side='left')
-		
+	
+	#pack the seventh row of the family frame and widgets within it	
 	def pack_seventh_family_row(self):
 		self.seventh_family_row.pack(side='top',fill='x')
 		
@@ -238,23 +269,33 @@ class FamilyTab(ttk.Frame):
 		self.quit_button.pack(side='left',padx=(8,0))
 	
 	#function to add traces to variables
-	#currently it is a bit odd to add traces to the frames separately
-	#but leave it like this in case we decide more need to be added
 	def add_traces(self):
+		#add traces for the create frame
 		self.add_create_traces()
+		
+		#add traces for the family frame
 		self.add_family_traces()
 	
+	#traces on variables associated with the create frame
 	def add_create_traces(self):
+		#we want to know if the family value is updated to update list of
+		#members and to activate or not the create button
+		#use the same trace on overwrite to change button state
 		self.family.trace_add('write',self.list_family)
 		self.overwrite.trace_add('write',self.check_family_buttons)
 	
+	#traces on variables associated with the family frame
 	def add_family_traces(self):
+		#if the family member info changes, fill in info if they are
+		#already in the database
 		self.family_member.trace_add('write',self.get_member_info)
 
 ####class utility functions
+	#function to create an empty database for a family
 	def create_family(self,*args):
 		#create the empty database file
-		print(f'Beginning creation of database for {self.family.get()}, any whitespaces will be replaced with underscores.')
+		print(f'Beginning creation of database for family {self.family.get()}, any whitespaces will be replaced with underscores.')
+		
 		#at this point, replace white spaces with underscores
 		for token in re.findall('[\s]+',self.family.get()):
 			self.family.set(self.family.get().replace(token,'_'))
@@ -308,7 +349,8 @@ class FamilyTab(ttk.Frame):
 		del self.proceed
 		
 	
-	#function to list which families are available by investigating
+	#function to list which families are available by investigating the
+	#subdirectories of the GiftExchange_data directory
 	def get_available_families(self,*args):
 		#check for available families
 		families=[]
@@ -322,6 +364,10 @@ class FamilyTab(ttk.Frame):
 				    dir_name.split(os.sep)[-1].split('_')[2:])\
 				    for dir_name in dir_list]
 		
+		#now that we know which families are available, add them
+		#to the family_box
+		self.family_box['values']=families
+		
 		return families
 	
 	#function to insert a new member into the family or alter the info
@@ -330,7 +376,7 @@ class FamilyTab(ttk.Frame):
 		#simply a way to call the utility function from the button
 		add_or_update_family_member(self.database_file,self.make_member_dictionary())
 	
-	#function to make a member dictionary needed for some utility functions
+	#function to make a member dictionary, needed for some utility functions
 	def make_member_dictionary(self,*args):
 		member={'family':{'name':self.family_member.get(),
 		  'email':self.email.get()}}
@@ -427,6 +473,9 @@ class FamilyTab(ttk.Frame):
 		self.add_or_update_member_button['style']=member_style
 		self.remove_member_button['style']=member_style
 	
+	#create a new window to create a second chance prompt when the overwrite checkbutton
+	#is checked and the user is attempting to create a database for a family
+	#which already exists
 	def prompt_for_overwrite(self,*args):
 		#def functions for the proceed or don't proceed buttons
 		def go_ahead(*args):
@@ -460,6 +509,8 @@ class FamilyTab(ttk.Frame):
 		overwrite_yes.grid(column=0,row=1)
 		overwrite_no.grid(column=1,row=1)
 		
+		#grab_set and make sure that nothing else happens
+		#while this window exists
 		overwrite_prompt.grab_set()
 		overwrite_prompt.wait_window()
 		

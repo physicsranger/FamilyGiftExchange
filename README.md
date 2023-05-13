@@ -8,7 +8,7 @@ The FamilyGiftExchange python application allows you to create and manage gift e
 
 You can generate name draws for a new year, input gifter-giftee assignments from previous years (if you had been tracking your own gift exchanges manually, for instance, review the exchanges from previous years, and more.
 
-_This is a work in progress as I get myself used to using GitHub.  I wouldn't recommend using things just yet, but if the idea is intriguing, keep an eye on the repository and feel free to add comments._
+**This is a work in progress as I get myself used to using GitHub.  I wouldn't recommend using things just yet, but if the idea is intriguing, keep an eye on the repository and feel free to add comments.**
 
 ## Installation
 Sorry, nothing here yet...

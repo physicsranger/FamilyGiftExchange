@@ -16,9 +16,8 @@ from GiftExchangeUtilities.name_draw import (
     add_previous_year,
     get_num_previous_years)
 
-#make a class for the secondary tab where the past history of the gift exchange
-#can be viewed with some logic to hide the most-recent exchange unless
-#explicitly asked to show it
+'''This class creates a tab for the main app notebook where you manage
+the actual gift exchange(s).'''
 class ExchangeTab(ttk.Frame):
 	def __init__(self,parent,app,master,*args,**kwargs):
 		#do the frame initialization
@@ -29,35 +28,46 @@ class ExchangeTab(ttk.Frame):
 		self.app=app
 		self.master=master
 		
+		#instead of redefining the same function
+		#point to the family tab, may cause issues
+		#if someone tried to use this split off from the main code
 		self.get_available_families=self.app.family_tab.get_available_families
 		
 		#add this tab to the notebook
 		self.parent.add(self,*args,**kwargs)
 		
+		#make the frame and associated widgets for this tab
 		self.make_frames()
 		
+		#add traces on variables
 		self.add_traces()
 	
-	#function to make the main frame and then fill it
+	#function to make the frame for this tab and then
+	#make sub frames to represent rows for the layout we want 
 	def make_frames(self):
 		self.exchange_frame=ttk.Frame(self,borderwidth=1,relief='sunken')
 		
-		#self.fill_exchange_frame(self.exchange_frame)
+		#make a frame for the first row and create widgets for it
 		self.first_row=ttk.Frame(self.exchange_frame,borderwidth=1,relief='flat')
 		self.fill_first_row(self.first_row)
 		
+		#make a frame for the second row and create widgets for it
 		self.second_row=ttk.Frame(self.exchange_frame,borderwidth=1,relief='flat')
 		self.fill_second_row(self.second_row)
 		
+		#make a frame for the third row and create widgets for it
 		self.third_row=ttk.Frame(self.exchange_frame,borderwidth=1,relief='flat')
 		self.fill_third_row(self.third_row)
 		
+		#make a frame for the fourth row and create widgets for it
 		self.fourth_row=ttk.Frame(self.exchange_frame,borderwidth=1,relief='flat')
 		self.fill_fourth_row(self.fourth_row)
 		
+		#make a frame for the fifth row and create widgets for it
 		self.fifth_row=ttk.Frame(self.exchange_frame,borderwidth=1,relief='flat')
 		self.fill_fifth_row(self.fifth_row)
 	
+	#create widgets within the first row
 	def fill_first_row(self,parent):
 		#button to draw names, start out disabled by default, put a trace
 		#on the family variable (can we have multiple traces at once?)
@@ -71,6 +81,7 @@ class ExchangeTab(ttk.Frame):
 		else:
 			self.family=tki.StringVar()
 		
+		#create a similar family drop down box
 		self.family_label=ttk.Label(parent,text='Family:',
 		padding=(2,1,1,1))
 		self.family_box=ttk.Combobox(parent,textvariable=self.family,
@@ -78,38 +89,45 @@ class ExchangeTab(ttk.Frame):
 		self.family_box.bind('<<ComboboxSelected>>',self.get_available_families)
 		self.family_box['values']=self.get_available_families()
 		
+		#create spin box to select how many previous years to use
+		#when determining gifter giftee excludes
 		self.exclude_num_previous=tki.IntVar(value=1)
 		self.exclude_num_previous_label=ttk.Label(parent,
 		    text='Number of previous years to exclude giftees',
 		    padding=(2,1,1,1))
-		###self.exclude_num_previous_entry=ttk.Entry(parent,
-		   ### textvariable=self.exclude_num_previous,width=2)
 		self.exclude_num_previous_spinbox=ttk.Spinbox(parent,
 		    from_=0,to=max(1,self.get_num_years()),increment=1,width=2,
 		    textvariable=self.exclude_num_previous)
 	
+	#create widgets within the second row
 	def fill_second_row(self,parent):
+		#Default to the current year
 		self.exchange_year=tki.StringVar(value=time.localtime().tm_year)
 		self.exchange_year_label=ttk.Label(parent,text='Year:',width=4)
 		self.exchange_year_entry=ttk.Entry(parent,
 		    textvariable=self.exchange_year,width=4)
 		
+		#Allow that people may need to redo a name draw for a given year
 		self.overwrite_year=tki.BooleanVar(value=False)
 		self.overwrite_year_check=ttk.Checkbutton(parent,
 		    variable=self.overwrite_year,onvalue=True,offvalue=False)
 		self.overwrite_year_label=ttk.Label(parent,
 		    text='Replace existing year?')
-		    	
+		
+		#allow that some members may not participate every year
 		self.skip_members=[]
 		self.skip_members_button=ttk.Button(parent,
 		    text='Choose members to skip',command=self.choose_members_to_skip,
 		    state='disabled',style='Off.TButton')	
 	
+	#create widgets for the third row
 	def fill_third_row(self,parent):
+		#This row focuses on viewing gifter-giftee assignments
+		#for previous years, though the current year can be shown
 		self.view_previous_years_button=ttk.Button(parent,
 		    text='View Previous Years',command=self.view_previous,state='disabled',
 		    style='Off.TButton')
-		    
+		
 		self.num_previous=tki.IntVar(value=1)
 		self.num_previous_label=ttk.Label(parent,text='Number of years to view')
 		self.num_previous_entry=ttk.Entry(parent,
@@ -120,23 +138,30 @@ class ExchangeTab(ttk.Frame):
 		    variable=self.include_current,onvalue=True,offvalue=False)
 		self.include_current_label=ttk.Label(parent,text='Including Current?')
 	
+	#create widgets for the fourth row
 	def fill_fourth_row(self,parent):
+		#allow name draw info from previous years to be input directly
 		self.input_previous_year_button=ttk.Button(parent,
 		   text='Input Data For Previous Year',command=self.input_previous,
 		   state='disabled',style='Off.TButton')
 	
+	#create a quit button for the fifth row
 	def fill_fifth_row(self,parent):
 		self.quit_button=ttk.Button(parent,text='Quit',command=self.quit)
 	
+	#pack the frame, each row, and all widgets in the rows.
 	def pack_all(self):
+		#pack the frame itself
 		self.exchange_frame.pack(expand=True,fill='both')
 		
+		#now pack the rows in order
 		self.pack_first_row()
 		self.pack_second_row()
 		self.pack_third_row()
 		self.pack_fourth_row()
 		self.pack_fifth_row()
 	
+	#function to pack the first row and widgets within it
 	def pack_first_row(self):
 		self.first_row.pack(side='top',fill='x')
 		self.draw_names_button.pack(side='left')
@@ -145,7 +170,8 @@ class ExchangeTab(ttk.Frame):
 		self.exclude_num_previous_label.pack(side='left')
 		#self.exclude_num_previous_entry.pack(side='left')
 		self.exclude_num_previous_spinbox.pack(side='left')
-		
+	
+	#function to pack the second row and widgets within it
 	def pack_second_row(self):
 		self.second_row.pack(side='top',fill='x')
 		self.exchange_year_label.pack(side='left')
@@ -154,6 +180,7 @@ class ExchangeTab(ttk.Frame):
 		self.overwrite_year_check.pack(side='left',padx=(0,8))
 		self.skip_members_button.pack(side='left')
 	
+	#function to pack the third row and widgets within it
 	def pack_third_row(self):
 		self.third_row.pack(side='top',fill='x',pady=(8,8))
 		self.view_previous_years_button.pack(side='left')
@@ -162,10 +189,12 @@ class ExchangeTab(ttk.Frame):
 		self.include_current_label.pack(side='left')
 		self.include_current_check.pack(side='left')
 	
+	#function to pack the fourth row and widgets within it
 	def pack_fourth_row(self):
 		self.fourth_row.pack(side='top',fill='x',pady=(8,8))
 		self.input_previous_year_button.pack(side='left')
 	
+	#function to pack the fifth row and widgets within it
 	def pack_fifth_row(self):
 		self.fifth_row.pack(side='top',fill='x',pady=(8,8))
 		self.quit_button.pack(side='left')
@@ -178,6 +207,8 @@ class ExchangeTab(ttk.Frame):
 	
 	#add traces on variables associated with the exchange_frame
 	def add_exchange_traces(self,*args):
+		#need to make sure the family selection is valid
+		#before activating the buttons
 		self.family.trace_add('write',self.check_exchange_buttons)
 	
 	#function to do the name draw
@@ -190,12 +221,16 @@ class ExchangeTab(ttk.Frame):
 			    f'data_family_{self.family.get()}')
 				
 			database_file=os.path.join(self.database_directory,"GiftExchange.db")
-			
+		
+		#try to make the name draws	
 		success=generate_exchange(database_file,skip_names=self.skip_members,
 		    num_previous_exclude=self.exclude_num_previous.get(),
 		    overwrite=self.overwrite_year.get(),
 		    new_year=self.exchange_year.get())
 		
+		#if we were able to make the draws, write results out to text files
+		#where the file name has the name of the gifter and the content
+		#of the file contains the giftee name (and address)
 		if success:
 			output_giftee_assignments(database_file,self.exchange_year.get())
 			print(f'Names drawn and assignments generated text files written in {os.path.join(os.path.dirname(database_file),str(self.exchange_year.get()))}')
@@ -298,6 +333,8 @@ class ExchangeTab(ttk.Frame):
 		except:
 			print(previous_exchanges)
 	
+	#function to create a new window where gifter-giftee assignments
+	#from previous years can be added to the database
 	def input_previous(self,*args):
 		#def add function to kill new window
 		#using the after method seems to avoid spinning ball of death on my mac
@@ -393,6 +430,8 @@ class ExchangeTab(ttk.Frame):
 		else:
 			print(f'Name list for family {self.family.get()} came up empty, nothing to do.')
 
+	#function to set buttons as active or not based on if the family selection
+	#is valid or not
 	def check_exchange_buttons(self,*args):
 		#make sure that the selected family is valid before enabling
 		#the draw names button
@@ -415,6 +454,8 @@ class ExchangeTab(ttk.Frame):
 		
 		self.exclude_num_previous_spinbox['to']=max(1,self.get_num_years())
 	
+	#function to get the number of years in a database file, skipping the most-recent
+	#year, so we can set the maximum number of years used for excludes
 	def get_num_years(self,*args):
 		#check if a database file has been specified
 		if hasattr(self.app.family_tab,'database_file'):
