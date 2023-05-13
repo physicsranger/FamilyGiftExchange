@@ -1,1 +1,7 @@
+#ignore the directory with an individuals databases
 GiftExchange_data
+
+#ignore the pyinstaller stuff
+dist
+build
+*.spec
