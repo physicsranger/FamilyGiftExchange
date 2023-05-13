@@ -6,8 +6,10 @@ from functools import reduce
 
 from GiftExchangeUtilities.create import create_database
 
-from GiftExchangeUtilities.management import add_or_update_family_member,\
-remove_family_member,query_member
+from GiftExchangeUtilities.management import (
+	add_or_update_family_member,
+	remove_family_member,
+	query_member)
 
 #make a class for the main tab where you manage your family database
 #and create the gift draws for a given year
@@ -252,7 +254,7 @@ class FamilyTab(ttk.Frame):
 ####class utility functions
 	def create_family(self,*args):
 		#create the empty database file
-		print(f'Creating database for {self.family.get()}, any whitespaces will be replaced with underscores.')
+		print(f'Beginning creation of database for {self.family.get()}, any whitespaces will be replaced with underscores.')
 		#at this point, replace white spaces with underscores
 		for token in re.findall('[\s]+',self.family.get()):
 			self.family.set(self.family.get().replace(token,'_'))
@@ -290,9 +292,20 @@ class FamilyTab(ttk.Frame):
 				print(f'Data directory for family {self.family.get()} does not exist, but could not make directory:\n{self.database_directory.get()}.\nCannot create database.')
 				return
 		
-		#may add a try except statement here later, but for now
-		#we'll want to capture any potential output
-		create_database(self.database_file,self.overwrite.get())
+		#open up a prompt window to make sure the user really wants to overwrite the file
+		if self.family.get() in self.get_available_families()\
+		    and self.overwrite.get():
+		    self.prompt_for_overwrite()
+		else:
+			self.proceed=True
+		
+		#if we've got the go ahead, make the database
+		if self.proceed:
+			create_database(self.database_file,self.overwrite.get())
+		else:
+			print(f'Okay, we will not overwrite database for family {self.family.get()}.')
+		
+		del self.proceed
 		
 	
 	#function to list which families are available by investigating
@@ -413,6 +426,43 @@ class FamilyTab(ttk.Frame):
 		
 		self.add_or_update_member_button['style']=member_style
 		self.remove_member_button['style']=member_style
+	
+	def prompt_for_overwrite(self,*args):
+		#def functions for the proceed or don't proceed buttons
+		def go_ahead(*args):
+			self.proceed=True
+			overwrite_prompt.grab_release()
+			overwrite_prompt.after(10,overwrite_prompt.destroy)
+		
+		def no_go(*args):
+			self.proceed=False
+			overwrite_prompt.grab_release()
+			overwrite_prompt.after(10,overwrite_prompt.destroy)
+		
+		#create a new toplevel window
+		overwrite_prompt=tki.Toplevel(self.master)
+		overwrite_prompt.title('Second Chance')
+		
+		#use a label to display the prompt message
+		overwrite_label=ttk.Label(overwrite_prompt,text=f'Database exists for family "{self.family.get()}".\n\nOvewrite box is checked.\n\nDo you wish to proceed with creating\na new database for this family?')
+		
+		#make buttons for yes and no
+		overwrite_yes=ttk.Button(overwrite_prompt,text='Yes',style='On.TButton',
+		    command=go_ahead)
+		
+		overwrite_no=ttk.Button(overwrite_prompt,text='No',style='On.TButton',
+		    command=no_go)
+		
+		#grid everything
+		overwrite_label.grid(column=0,row=0,columnspan=2,sticky='NESW',
+		    pady=(4,12),padx=4)
+		
+		overwrite_yes.grid(column=0,row=1)
+		overwrite_no.grid(column=1,row=1)
+		
+		overwrite_prompt.grab_set()
+		overwrite_prompt.wait_window()
+		
 	
 	#function for quit button, I think using the 'after' method will avoid
 	#the GUI hanging up as I'm seeing on my mac

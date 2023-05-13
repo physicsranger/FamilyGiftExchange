@@ -455,6 +455,24 @@ def get_member_name(database_file,member_id,cur=None):
 ##and to populate the exchange table with info from previous years before the
 ##database was used to manage name draws
 #################################################################################
+def get_num_previous_years(database_file,cur=None):
+	if not isinstance(cur,sqlite3.Cursor):
+		con=sqlite3.connect(database_file)
+		cur=con.cursor()
+	else:
+		con=None
+	
+	#get the number of years, excluding the current year, from the number of columns
+	#subtracting 1 for the current year and 1 more for the 'id' column
+	#but we'll make sure and at least return a value of 0 in the event
+	#that the database is super new and has only the 'id' column in this table
+	num_years=max(0,len(cur.execute('SELECT * FROM exchange').description)-2)
+	
+	if con is not None:
+		con.close()
+	
+	return num_years
+
 
 def get_previous_years(database_file,number_to_view=1,include_latest=False,cur=None):
 	#do a few sanity checks on the number_to_view_parameter
