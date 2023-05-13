@@ -8,8 +8,13 @@ from rich.table import Table
 
 from functools import reduce
 
-from GiftExchangeUtilities.name_draw import generate_exchange,\
-    output_giftee_assignments,get_previous_years,valid_year,add_previous_year
+from GiftExchangeUtilities.name_draw import (
+    generate_exchange,
+    output_giftee_assignments,
+    get_previous_years,
+    valid_year,
+    add_previous_year,
+    get_num_previous_years)
 
 #make a class for the secondary tab where the past history of the gift exchange
 #can be viewed with some logic to hide the most-recent exchange unless
@@ -73,12 +78,15 @@ class ExchangeTab(ttk.Frame):
 		self.family_box.bind('<<ComboboxSelected>>',self.get_available_families)
 		self.family_box['values']=self.get_available_families()
 		
-		self.exclude_num_previous=tki.IntVar(value=3)
+		self.exclude_num_previous=tki.IntVar(value=1)
 		self.exclude_num_previous_label=ttk.Label(parent,
 		    text='Number of previous years to exclude giftees',
 		    padding=(2,1,1,1))
-		self.exclude_num_previous_entry=ttk.Entry(parent,
-		    textvariable=self.exclude_num_previous,width=2)
+		###self.exclude_num_previous_entry=ttk.Entry(parent,
+		   ### textvariable=self.exclude_num_previous,width=2)
+		self.exclude_num_previous_spinbox=ttk.Spinbox(parent,
+		    from_=0,to=max(1,self.get_num_years()),increment=1,width=2,
+		    textvariable=self.exclude_num_previous)
 	
 	def fill_second_row(self,parent):
 		self.exchange_year=tki.StringVar(value=time.localtime().tm_year)
@@ -135,7 +143,8 @@ class ExchangeTab(ttk.Frame):
 		self.family_label.pack(side='left',padx=(8,0))
 		self.family_box.pack(side='left',padx=(0,8))
 		self.exclude_num_previous_label.pack(side='left')
-		self.exclude_num_previous_entry.pack(side='left')
+		#self.exclude_num_previous_entry.pack(side='left')
+		self.exclude_num_previous_spinbox.pack(side='left')
 		
 	def pack_second_row(self):
 		self.second_row.pack(side='top',fill='x')
@@ -177,7 +186,7 @@ class ExchangeTab(ttk.Frame):
 		if hasattr(self.app.family_tab,'database_file'):
 			database_file=self.app.family_tab.database_file
 		else:
-			database_directory=os.path.join(self.app.app_dir,'GiftExchange_data',
+			database_directory=os.path.join(self.app.app_directory,'GiftExchange_data',
 			    f'data_family_{self.family.get()}')
 				
 			database_file=os.path.join(self.database_directory,"GiftExchange.db")
@@ -200,7 +209,8 @@ class ExchangeTab(ttk.Frame):
 		#try creating a function dynamically for the button on this window
 		def assign_skip_names(*args):
 			self.skip_members=[name for name,flag in zip(names,name_flags) if flag.get()]
-			skip_window.destroy()
+			skip_window.grab_release()
+			skip_window.after(10,skip_window.destroy)
 		
 		#get the family member names from the family_tab
 		names=self.app.family_tab.family_member_box['values']
@@ -255,7 +265,7 @@ class ExchangeTab(ttk.Frame):
 		if hasattr(self.app.family_tab,'database_file'):
 			database_file=self.app.family_tab.database_file
 		else:
-			database_file=os.path.join(self.app.app_dir,'GiftExchange_data',
+			database_file=os.path.join(self.app.app_directory,'GiftExchange_data',
 			    f'data_family_{self.family.get()}','GiftExchange.db')
 		
 		#get the information, returned as a nested dictionary
@@ -292,6 +302,7 @@ class ExchangeTab(ttk.Frame):
 		#def add function to kill new window
 		#using the after method seems to avoid spinning ball of death on my mac
 		def new_window_quit(*args):
+			previous_year_window.grab_release()
 			previous_year_window.after(10,previous_year_window.destroy)
 		
 		#def a function on the fly for a new button
@@ -300,7 +311,7 @@ class ExchangeTab(ttk.Frame):
 				#get the database fileif hasattr(self.app.family_tab,'database_file'):
 				database_file=self.app.family_tab.database_file
 			else:
-				database_file=os.path.join(self.app.app_dir,'GiftExchange_data',
+				database_file=os.path.join(self.app.app_directory,'GiftExchange_data',
 				    f'data_family_{self.family.get()}','GiftExchange.db')
 			
 			#make an exchange dictionary
@@ -310,6 +321,8 @@ class ExchangeTab(ttk.Frame):
 			    zip(names,name_variables) if variable.get()!='')
 			
 			add_previous_year(database_file,previous_year.get(),draws)
+			
+			self.exclude_num_previous_spinbox['to']=max(1,self.get_num_years())
 		
 		#add a function to check that the names are all in the database
 		#or set to NULL
@@ -335,6 +348,7 @@ class ExchangeTab(ttk.Frame):
 		#previous year exchange info
 		if names:
 			previous_year_window=tki.Toplevel(self.master)
+			previous_year_window.title('Input Previous Draw')
 			previous_year_frame=ttk.Frame(previous_year_window)
 			
 			previous_year=tki.StringVar()
@@ -398,22 +412,21 @@ class ExchangeTab(ttk.Frame):
 		
 		self.input_previous_year_button['state']=button_state
 		self.input_previous_year_button['style']=button_style
+		
+		self.exclude_num_previous_spinbox['to']=max(1,self.get_num_years())
 	
-#	#function to list which families are available by investigating
-#	def get_available_families(self,*args):
-#		#check for available families
-#		families=[]
-#		if os.path.exists(os.path.join(self.app.app_directory,'GiftExchange_data')):
-#			dir_list=glob.glob(os.path.join(self.app.app_directory,
-#			'GiftExchange_data','data_family_*'))
-#
-#			if dir_list:
-#				#we want to split on the underscore
-#				#but allow for underscores in family names
-#				families=[reduce(lambda s1,s2:s1+'_'+s2,\
-#				    dir_name.split(os.sep)[-1].split('_')[2:]) for dir_name in dir_list]
-#		
-#		return families
+	def get_num_years(self,*args):
+		#check if a database file has been specified
+		if hasattr(self.app.family_tab,'database_file'):
+			database_file=self.app.family_tab.database_file
+		else:
+			database_file=os.path.join(self.app.app_directory,'GiftExchange_data',
+			    f'data_family_{self.family.get()}','GiftExchange.db')
+		
+		if not os.path.exists(database_file):
+			return 0
+		else:
+			return get_num_previous_years(database_file)
 	
 	#function for quit button, I think using the 'after' method will avoid
 	#the GUI hanging up as I'm seeing on my mac
