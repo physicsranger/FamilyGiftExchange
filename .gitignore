@@ -1,3 +1,6 @@
+#ignore some basic stuff
+__pycache__/
+
 #ignore the directory with an individuals databases
 GiftExchange_data
 
