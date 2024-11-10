@@ -1,0 +1,18 @@
+[tool.poetry]
+name = "family-gift-exchange"
+version = "1.0.0"
+description = "GUI application to manage random gift exchanges, family, work, etc.; via a SQL database."
+authors = ["physicsranger <tyrel.j.johnson@gmail.com>"]
+license = "GPL-3.0"
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = ">=3.10"
+sqlalchemy = "^2.0.29"
+numpy = "^1.26.4"
+rich = "^13.7.1"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

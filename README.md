@@ -1,4 +1,5 @@
 # Family Gift Exchange
+**This branch explores switching to SQLAlchemy, but development has not proceeded far.**  
 A python GUI (planned to be an executable) to manage and run family gift exchanges when it isn't possible for everyone to get together.
 
 ## Project Overview
