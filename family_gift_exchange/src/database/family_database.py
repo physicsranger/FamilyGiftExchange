@@ -3,7 +3,6 @@ from sqlalchemy import (
     select,
     update
 )
-from sqlalchemy.exc import IntegrityError
 
 from sqlalchemy.orm import (
     sessionmaker,
@@ -11,6 +10,7 @@ from sqlalchemy.orm import (
 )
 
 from sqlalchemy.orm.exc import StaleDataError
+from sqlalchemy.exc import IntegrityError
 
 from .family_tables import (
     Base,
@@ -54,59 +54,68 @@ class MyFamily:
     def members(self,
                 session: Session) -> set[str|None]:
         '''
-        function to return a set of all family member names in
+        Method to return a set of all family member names in
         the current family table
 
         Parameters
         ----------
         session : sqlalchemy.orm.Session
-            the current database connection session
+            The current database connection.
 
         Returns
         -------
         set (str)
-            all 'name' values from the family table
+            A set of all 'name' values from the family table.
         '''
 
         members = session.scalars(select(Family.name)).all()
         
         return set(members)
     
+    # likely going to delete this method
+    # def member_ids(self,
+    #                session: Session) -> dict:
+    #     '''
+    #     functionto create a dictionary with
+    #     family member names as keys and family
+    #     table id number as values
 
-    def member_ids(self,
-                   session: Session) -> dict:
-        '''
-        functionto create a dictionary with
-        family member names as keys and family
-        table id number as values
+    #     Parameters
+    #     ----------
+    #     session : sqlalchemy.orm.Session
+    #         the current database connections session
 
-        Parameters
-        ----------
-        session : sqlalchemy.orm.Session
-            the current database connections session
+    #     Returns
+    #     -------
+    #     dict
+    #         a dictionary with (key, value) pairs of
+    #         (name, id)
+    #     '''
 
-        Returns
-        -------
-        dict
-            a dictionary with (key, value) pairs of
-            (name, id)
-        '''
-
-        members = session.scalars(select(Family.id, Family.name)).all()
+    #     members = session.scalars(select(Family.id, Family.name)).all()
         
-        return {member.name: member.id for member in members}
+    #     return {member.name: member.id for member in members}
 
-    # conundrum, we could pass in a "session" (optional None) to better
-    # match the suggested best practices; however, there won't be significant
-    # changes between access given the limited nature of this particular database
-    # so, for now, we will leave this thought here but proceed as we have been
+
     def add_or_update_family_member(self,
                                     name: str,
                                     email: str | None = None,
-                                    address: str | None = None,
-                                    significant_other : str | None = None):
+                                    address: str | None = None):
         '''
-        function to add or update information about a family member
+        Method to add or update information about a family member.
+
+        Parameters
+        ----------
+        name : str
+            Name of the family member for which information should be
+            added/updated.
+        email : str
+            Optional email address for this family member.
+        address : str
+            Optional address for this family member, should be entered with
+            new line characters separating the elements - address line 1,
+            address line 2 (blank if not applicable), city, state, zip code,
+            and country.  This is automatically handled by the GUI.
         '''
 
         # first, we'll connect to the database
@@ -123,29 +132,79 @@ class MyFamily:
             else:
                 address_id = None
             
-            # check if the significant_other is in the database
-            # get their so_id if they are
-            if significant_other is not None:
-                if significant_other in self.members(session):
-                    so_id = self._get_member_id(significant_other, session)
+            # # check if the significant_other is in the database
+            # # get their so_id if they are
+            # if significant_other is not None:
+            #     if significant_other in self.members(session):
+            #         so_id = self._get_member_id(significant_other, session)
                 
-                else:
-                    print(f"Significant other ({significant_other}) specified for "
-                          f"{name} but not in family table.  Will add {significant_other}, "
-                          "assuming same address, if specified, you may need to manually "
-                          "update or correct this information.")
+            #     else:
+            #         print(f"Significant other ({significant_other}) specified for "
+            #               f"{name} but not in family table.  Will add {significant_other}, "
+            #               "assuming same address, if specified, you may need to manually "
+            #               "update or correct this information.")
                     
-                    so_id = self._add_member(session,
-                                            {"name": significant_other,
-                                             "address_id": address})
+            #         so_id = self._add_member(session,
+            #                                 {"name": significant_other,
+            #                                  "address_id": address})
+            
+            # else:
+            #     so_id = None
+
+            # now we check if this member exists (updating) or if we are adding them
+            member_info = {"name": name,
+                           "email": email,
+                           "address_id": address_id}
+            
+            if name in self.members(session):
+                self._update_member(session, member_info)
             
             else:
-                so_id = None
+                self._add_member(session, member_info)
+            
+            # if significant_other is not None:
+            #     _ = self._update_member(session,
+            #                             {"id": so_id,
+            #                              "name": significant_other,
+            #                              "so_id": member_id})
+        
+        # notify of success
+        print(f"Successfully added/updated information for {name}.")
+    
+    def remove_family_member(self,
+                             name: str):
+        pass
 
 
+    def update_significant_other(self,
+                                 name: str,
+                                 significant_other: str):
+        pass
+
+##### methods only expected to be called by other object methods #####
     def _get_address_id(self,
                         address: str,
                         session: Session) -> int | None:
+        '''
+        Method to return the id column from the address
+        table corresponding to the input address string
+
+        Parameters
+        ----------
+        address : str
+            The address string, formatted to havenew line characters separating
+            the elements - address line 1, address line 2 (blank if not applicable),
+            city, state, zip code, and country. This is automatically handled by the GUI.
+        
+        session : sqlalchemy.orm.Session
+            The current database connection
+        
+        Returns
+        -------
+        int or NoneType
+            The address table id column matching the input address string or a 
+            NoneType if there is no match
+        '''
         
         address_id = session.execute(
             select(Address.id).filter_by(address=address)
@@ -156,24 +215,68 @@ class MyFamily:
     def _add_address(self,
                      address: str,
                      session: Session) -> int:
-        # try to add the new address
-        try:
-            session.add(Address(address=address))
-        
-        except IntegrityError:
-            # catch the error to reraise it but with our message
-            raise IntegrityError(f"Cannot add {address}, already in the table.")
+        '''
+        Method to an a new address string to the address table.
 
-        # return the new id
-        return self._get_address_id(address, session)
+        Parameters
+        ----------
+        address : str
+            The address string, formatted to havenew line characters separating
+            the elements - address line 1, address line 2 (blank if not applicable),
+            city, state, zip code, and country. This is automatically handled by the GUI.
+        
+        session : sqlalchemy.orm.Session
+            The current database connection
+        
+        Returns
+        -------
+        int
+            The value of the id column for the newly added for in the address table.
+        
+        Raises
+        ------
+        IntegrityError
+            If trying to add an address that already exists, raise an error.
+        '''
+        # only add the address if it isn't in there
+        while (address_id := self._get_address_id(address, session)) is None:
+            # try to add the new address
+            try:
+                session.add(Address(address=address))
+        
+            except IntegrityError as error:
+                # catch the error to reraise it but with our message
+                # shouldn't happen if we aren't specifying the id
+                raise IntegrityError(f"Cannot add address = {address}.\n"
+                                 f"Exception info: {error}")
+
+        # return the id
+        return address_id
 
     def _get_so_id(self,
-                   significant_other: str,
+                   name: str,
                    session: Session) -> int | None:
+        '''
+        Method to get the id value of the specified
+        family member (by name).
+
+        Parameters
+        ----------
+        name : str
+            Name of the family member for which you want to
+            get the id of their significant other
+        session : sqlalchemy.orm.Session
+            The current database connect.
         
+        Returns
+        -------
+        int or NoneType
+            The id of the specified family member's significant
+            other, if they have one, otherwise return NoneType.
+        '''
         member_id = session.execute(
-            select(Family.id).filter_by(name=significant_other)
-        )
+            select(Family.id).filter_by(name=name)
+        ).first[0]
 
         if member_id is None:
             return None
@@ -186,8 +289,24 @@ class MyFamily:
     
     def _get_member_id(self,
                        name: str,
-                       session: Session) -> int:
+                       session: Session) -> int | None:
+        '''
+        Method to get the id of a given family member.
+
+        Parameters
+        ----------
+        name : str
+            The name of the family member of interest
+        session : sqlalchemy.orm.Session
+            The current database connection.
         
+        Returns
+        -------
+        int or NoneType
+            The id value of the specified family member.
+            If no name match is found, returned value will
+            be a NoneType.
+        '''
         member_id = session.execute(
             select(Family.id).filter_by(name=name)
         ).first()[0]
@@ -196,9 +315,23 @@ class MyFamily:
 
     def _add_member(self,
                      session: Session,
-                     **kwargs) -> int:
+                     **kwargs):
         '''
-        Function to actual interface with the database via a session
+        Method to add a new family member to the family table.
+
+        Parameters
+        ----------
+        session : sqlalchemy.orm.Session
+            The current database connection.
+        kwargs : dict[various]
+            Values to be added to the family table, must have a
+            "name" key.  If this dict includes a key "id", that
+            will be removed.
+        
+        Raises
+        ------
+        KeyError
+            If no name is specified for the family member, raise an error.
         '''
         # first, make sure someone didn't try to pass the id value in
         try:
@@ -217,41 +350,36 @@ class MyFamily:
         # now, add the new family member
         session.add(Family(**kwargs))
 
-        # and return the new id
-        member_id = self._get_member_id(kwargs.get("name"), session)
-
-        return member_id
-
-        # with self.Session.begin() as session:
-            # session.execute(statement)
-            # if name in self.members:
-            #     #updating
-            #     #probably need try/except for if address_id is
-            #     #specified and not in address table (IntegrityError?)
-            #     session.execute(update(Family, [kwargs]))
-
-            # else:
-            #     #adding new member
-            #     #make sure not to try and specify
-            #     #id just in case it was passed in
-            #     try:
-            #         _ = kwargs.pop('id')
-            #     except KeyError:
-            #         pass
-
-            #     session.add(Family(name = name, **kwargs))
     
-    def remove_family_member(self,
-                             name: str):
-        pass
+    def _update_member(self,
+                       session: Session,
+                       **kwargs):
+        '''
+        Method to update the information for a given
+        entry in the family table.
 
-    def add_update_significant_other(self,
-                                     name: str,
-                                     so_name: str):
-        #look up name in family to get id
-        #look up so_name in family to get id to map to so_id
-        #need to catch error when one name doesn't exist
-        pass
+        Parameters
+        ----------
+        session : sqlalchemy.orm.Session
+            The current database connection.
+        kwargs : dict[various]
+            The values needed to identify the row to update as
+            well as the values to update.
+
+        Raises
+        ------
+        StaleDataError
+            If the information cannot be updated, raise an error.
+        '''
+        # likely need some sort of try-except block
+        try:
+            session.execute(update(Family, [kwargs]))
+        
+        except StaleDataError as error:
+            # catch the exception to reraise with our info
+            raise StaleDataError("Could not update information for family member "
+                                f"with name '{kwargs.get('name')}' (id {kwargs.get('id')}).\n"
+                                f"Exception info: {error}")
 
 
 
