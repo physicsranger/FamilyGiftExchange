@@ -97,6 +97,8 @@ class MyFamily:
         
     #     return {member.name: member.id for member in members}
 
+###### Direct interface methods ######
+
 
     def add_or_update_family_member(self,
                                     name: str,
@@ -192,7 +194,43 @@ class MyFamily:
         print(f"{name} successfully removed from family table. "
                "Corresponding information in the significant_other table also removed.")
 
+
+    def get_email(self,
+                  name: str) -> str:
+        '''
+        Method to retrieve the email address for a given family member
+
+        Parameters
+        ----------
+        name : str
+            The name of the family member whose email address is requested.
+
+        Returns
+        -------
+        str or NoneType
+            The email for the requested family member, might be a NoneType
+            if no email address was entered in the database.
+        
+        Raises
+        ------
+        KeyError
+            If the requested family member is not found in the database,
+            raise an error.
+        '''
+
+        with self.Session() as session:
+            # first, check if the family member is in the database
+            if name not in self.members(session):
+                raise KeyError(f"{name} not found in family table.")
+            
+            email = session.execute(
+                select(Family.email).filter_by(name=name)
+            ).first()[0]
+        
+        return email
 ##### methods only expected to be called by other object methods #####
+
+
     def _get_address_id(self,
                         address: str,
                         session: Session) -> int | None:
@@ -438,5 +476,3 @@ class MyFamily:
             update(SignificantOther, [{"id": member_ids[0], "so_id": member_ids[1]},
                                       {"id": member_ids[1], "so_id": member_ids[0]}])
         )
-
-    
