@@ -1,5 +1,6 @@
 from sqlalchemy import (
     String,
+    Text,
     ForeignKey)
 
 from sqlalchemy.orm import (
@@ -8,21 +9,25 @@ from sqlalchemy.orm import (
     mapped_column,
     relationship)
 
+
 class Base(DeclarativeBase):
     pass
+
 
 class Family(Base):
     __tablename__ = 'family'
 
-    #figure out autoincrement
-    id: Mapped[int] = mapped_column(primary_key = True)
-    name: Mapped[str] = mapped_column(String(64), nullable = False)
+    # mapped_column does have an autoincrement option
+    # however, it should be automatically set to true
+    # for primary keys...make sure this holds
+    id: Mapped[int] = mapped_column(primary_key=True)
+    name: Mapped[str] = mapped_column(String(64), nullable=False)
     email: Mapped[str] = mapped_column(String(128), nullable = True)
     address_id: Mapped[int] = mapped_column(ForeignKey('address.id'))
 
-    address_table: Mapped['Address'] = relationship(back_populates = 'family')
-    so_table: Mapped['SignificantOther'] = relationship(back_populates = 'family')
-    exchange: Mapped['Exchange'] = relationship(back_populates = 'family')
+    address_table: Mapped['Address'] = relationship(back_populates='family')
+    so_table: Mapped['SignificantOther'] = relationship(back_populates='family')
+    exchange: Mapped['Exchange'] = relationship(back_populates='family')
 
     def __repr__(self) -> str:
         return f'{self.name}, email: {self.email}'
@@ -31,10 +36,10 @@ class Address(Base):
     __tablename__ = 'address'
 
     #figure out autoincrement
-    id: Mapped[int] = mapped_column(primary_key = True)
-    address: Mapped[str] = mapped_column(String(256), nullable = True)
+    id: Mapped[int] = mapped_column(primary_key=True)
+    address: Mapped[str] = mapped_column(Text, nullable=True)
 
-    family_table: Mapped[Family] = relationship(back_populates = 'address')
+    family_table: Mapped[Family] = relationship(back_populates='address')
 
     def __repr__(self) -> str:
         return f'{self.id}: {self.address}'
@@ -42,10 +47,10 @@ class Address(Base):
 class SignificantOther(Base):
     __tablename__ = 'significant_other'
 
-    id: Mapped[int] = mapped_column(ForeignKey('family.id'), primary_key = True)
-    so_id: Mapped[int] = mapped_column(nullable = True)
+    id: Mapped[int] = mapped_column(ForeignKey('family.id'), primary_key=True)
+    so_id: Mapped[int] = mapped_column(nullable=True)
 
-    family_table: Mapped[Family] = relationship(back_populates = 'significant_other')
+    family_table: Mapped[Family] = relationship(back_populates='significant_other')
 
     def __repr__(self) -> str:
         return f'id = {self.id} -> so = {self.so_id}'
@@ -59,11 +64,11 @@ class SignificantOther(Base):
 class Exchange(Base):
     __tablename__ = 'exchange'
 
-    id: Mapped[int] = mapped_column(ForeignKey('family.id'), primary_key = True)
-    year: Mapped[int] = mapped_column(primary_key = True)
-    draw_id: Mapped[int] = mapped_column(nullable = True)
+    id: Mapped[int] = mapped_column(ForeignKey('family.id'), primary_key=True)
+    year: Mapped[int] = mapped_column(primary_key=True)
+    draw_id: Mapped[int] = mapped_column(nullable=True)
 
-    family_table: Mapped[Family] = relationship(back_populates = 'exchange')
+    family_table: Mapped[Family] = relationship(back_populates='exchange')
 
     def __repr__(self) -> str:
         return (f'For year {self.year}, family member {self.id} '
