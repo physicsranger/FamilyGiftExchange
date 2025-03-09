@@ -1,7 +1,8 @@
 from sqlalchemy import (
     create_engine,
     select,
-    update
+    update,
+    delete,
 )
 
 from sqlalchemy.orm import (
@@ -100,7 +101,8 @@ class MyFamily:
     def add_or_update_family_member(self,
                                     name: str,
                                     email: str | None = None,
-                                    address: str | None = None):
+                                    address: str | None = None,
+                                    significant_other: str | None = None):
         '''
         Method to add or update information about a family member.
 
@@ -116,6 +118,12 @@ class MyFamily:
             new line characters separating the elements - address line 1,
             address line 2 (blank if not applicable), city, state, zip code,
             and country.  This is automatically handled by the GUI.
+        significant_other : str
+            Name of the significant other of the family member whose record
+            is being added or updated.  If the significant other has already
+            been entered into the table, the name entered must exactly match.
+            If the significant other is not in the table, they will be added
+            with an alert to the user.
         '''
 
         # first, we'll connect to the database
@@ -131,25 +139,6 @@ class MyFamily:
             
             else:
                 address_id = None
-            
-            # # check if the significant_other is in the database
-            # # get their so_id if they are
-            # if significant_other is not None:
-            #     if significant_other in self.members(session):
-            #         so_id = self._get_member_id(significant_other, session)
-                
-            #     else:
-            #         print(f"Significant other ({significant_other}) specified for "
-            #               f"{name} but not in family table.  Will add {significant_other}, "
-            #               "assuming same address, if specified, you may need to manually "
-            #               "update or correct this information.")
-                    
-            #         so_id = self._add_member(session,
-            #                                 {"name": significant_other,
-            #                                  "address_id": address})
-            
-            # else:
-            #     so_id = None
 
             # now we check if this member exists (updating) or if we are adding them
             member_info = {"name": name,
@@ -162,24 +151,46 @@ class MyFamily:
             else:
                 self._add_member(session, member_info)
             
-            # if significant_other is not None:
-            #     _ = self._update_member(session,
-            #                             {"id": so_id,
-            #                              "name": significant_other,
-            #                              "so_id": member_id})
+            if significant_other is not None:
+                self._update_significant_other(name,
+                                               significant_other,
+                                               address,
+                                               session)
         
         # notify of success
         print(f"Successfully added/updated information for {name}.")
     
     def remove_family_member(self,
                              name: str):
-        pass
+        '''
+        Method to remove a family member from the family table.  Note that
+        this will not remove them from the history of name draws and it
+        will not remove their address from the address table.  If the family
+        member being removed had a significant other, that information will
+        also be updated/deleted.
 
+        Parameters
+        ----------
+        name : str
+            The name of the family member to be removed.
+        '''
+        with self.Session.begin() as session:
+            # check if the member is actually in the table
+            if (member_id := self._get_member_id(name, session)) is None:
+                print(f"{name} is not in the family table.")
 
-    def update_significant_other(self,
-                                 name: str,
-                                 significant_other: str):
-        pass
+            else:
+                #first, make sure to update the corresponding significant other info
+                so_id = self._get_so_id(name, session)
+                if so_id is not None:
+                    session.execute(update(SignificantOther, [{"id": so_id, "so_id": None}]))
+                    session.execute(delete(SignificantOther).where(id=member_id))
+
+                # now, remove the family member
+                session.execute(delete(Family).where(name=name))
+        
+        print(f"{name} successfully removed from family table. "
+               "Corresponding information in the significant_other table also removed.")
 
 ##### methods only expected to be called by other object methods #####
     def _get_address_id(self,
@@ -257,8 +268,8 @@ class MyFamily:
                    name: str,
                    session: Session) -> int | None:
         '''
-        Method to get the id value of the specified
-        family member (by name).
+        Method to get the so_id value of the significant
+        other of the specified family member (by name).
 
         Parameters
         ----------
@@ -382,6 +393,50 @@ class MyFamily:
                                 f"Exception info: {error}")
 
 
+    def _update_significant_other(self,
+                                 member1: str,
+                                 member2: str,
+                                 session: Session,
+                                 address: str | None = None):
+        '''
+        Method to  update the significant_other table, connecting
+        family members via id values.  If either of the two members
+        is not in the table, they will be added.  An optional address
+        string can be included.
 
+        Parameters
+        ----------
+        member1 : str
+            The name of one family member for which significant other info
+            will be updated.
+        member2 : str
+            The name of a second family member for which significant other
+            info will be updated.
+        session : sqlalchemy.orm.Session
+            The current database connection.
+        address : str or NoneType
+            An address string which will be used if either member is not
+            in the database, the same address is used for both.
+        '''
+        # get the address id
+        # use _add_address since it will check if the address exists
+        # return if it does and add if it doesn't
+        address_id = self._add_address(address, session)
+
+        # get the member_id values
+        member_ids = []
+        for member in [member1, member2]:
+            if member not in self.members(session):
+                print(f"Updating significant other information, did not find {member}, "
+                      f"will be added with address string {address}")
+                self._add_member(session, {"name": member, "address_id": address_id})
+            
+            member_ids.append(self._get_member_id(member1, session))
+
+        # now update the table
+        session.execute(
+            update(SignificantOther, [{"id": member_ids[0], "so_id": member_ids[1]},
+                                      {"id": member_ids[1], "so_id": member_ids[0]}])
+        )
 
     
