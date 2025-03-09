@@ -127,7 +127,20 @@ class MyFamily:
             # get their so_id if they are
             if significant_other is not None:
                 if significant_other in self.members(session):
-                    so_id = self._get_so_id(significant_other, session)
+                    so_id = self._get_member_id(significant_other, session)
+                
+                else:
+                    print(f"Significant other ({significant_other}) specified for "
+                          f"{name} but not in family table.  Will add {significant_other}, "
+                          "assuming same address, if specified, you may need to manually "
+                          "update or correct this information.")
+                    
+                    so_id = self._add_member(session,
+                                            {"name": significant_other,
+                                             "address_id": address})
+            
+            else:
+                so_id = None
 
 
     def _get_address_id(self,
@@ -158,26 +171,57 @@ class MyFamily:
                    significant_other: str,
                    session: Session) -> int | None:
         
-        id = session.execute(
+        member_id = session.execute(
             select(Family.id).filter_by(name=significant_other)
         )
 
-        if id is None:
+        if member_id is None:
             return None
 
         so_id = session.execute(
-            select(SignificantOther.so_id).filter_by(so_id=id)
+            select(SignificantOther.so_id).filter_by(id=member_id)
         )
 
         return so_id
+    
+    def _get_member_id(self,
+                       name: str,
+                       session: Session) -> int:
+        
+        member_id = session.execute(
+            select(Family.id).filter_by(name=name)
+        ).first()[0]
 
-    def _add_or_update(self,
-                       statement,
-                       session):
+        return member_id
+
+    def _add_member(self,
+                     session: Session,
+                     **kwargs) -> int:
         '''
         Function to actual interface with the database via a session
         '''
-        pass
+        # first, make sure someone didn't try to pass the id value in
+        try:
+            _ = kwargs.pop('id')
+            print("Warning, the id parameter should not be specified, removing.")
+
+        except KeyError:
+            pass
+
+        # now check that the name parameter has been added
+        # other wise the add command will fail
+        if 'name' not in kwargs.keys():
+            raise KeyError("User must specify a name for new family member. "
+                           f"Key 'name' not found among inputs: {kwargs.keys()}")
+
+        # now, add the new family member
+        session.add(Family(**kwargs))
+
+        # and return the new id
+        member_id = self._get_member_id(kwargs.get("name"), session)
+
+        return member_id
+
         # with self.Session.begin() as session:
             # session.execute(statement)
             # if name in self.members:
